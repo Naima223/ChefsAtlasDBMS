@@ -1,0 +1,27 @@
+version: '3.9'
+
+services:
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: chefsatlas_mssql
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "Password123."
+      MSSQL_PID: "Express"
+    ports:
+      - "1433:1433"
+    volumes:
+      - db_data:/var/opt/mssql
+
+volumes:
+  db_data:
+    driver: local
