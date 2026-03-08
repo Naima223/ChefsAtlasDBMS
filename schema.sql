@@ -1,40 +1,38 @@
+-- Create database
 CREATE DATABASE cse3100_testA1;
-
-CREATE USER 'admin' @'localhost' IDENTIFIED BY 'strong_password';
-
-GRANT ALL PRIVILEGES ON cse3100_testA1.* TO 'admin' @'localhost';
-
-FLUSH PRIVILEGES;
+GO
 
 USE cse3100_testA1;
+GO
 
+-- Create login and user
+CREATE LOGIN admin WITH PASSWORD = 'strong_password';
+CREATE USER admin FOR LOGIN admin;
+GO
+
+-- Create tables
 CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100),
-    email VARCHAR(100),
-    password VARCHAR(100)
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    name NVARCHAR(100),
+    email NVARCHAR(100),
+    password NVARCHAR(100)
 );
+GO
 
 CREATE TABLE posts (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL, -- Foreign key to users
-    title VARCHAR(255) NOT NULL,
-    content TEXT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL,
+    title NVARCHAR(255) NOT NULL,
+    content NVARCHAR(MAX) NOT NULL,
+    CONSTRAINT FK_posts_users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+GO
 
-INSERT INTO
-    users (name, email, password)
-VALUES (
-        'Alice',
-        'alice@example.com',
-        'password123'
-    );
+-- Insert sample data
+INSERT INTO users (name, email, password)
+VALUES ('Alice', 'alice@example.com', 'password123');
+GO
 
-INSERT INTO
-    posts (user_id, title, content)
-VALUES (
-        1,
-        'My First Post',
-        'This is the content of my first post.'
-    );
+INSERT INTO posts (user_id, title, content)
+VALUES (1, 'My First Post', 'This is the content of my first post.');
+GO
