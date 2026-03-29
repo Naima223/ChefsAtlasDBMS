@@ -1,6 +1,7 @@
 import logo from "../assets/logo.png";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import Login from "./Login";
 import "./Navbar.css";
 
 const NAV_LINKS = [
@@ -10,7 +11,15 @@ const NAV_LINKS = [
   { label: "Contact", href: "/contact" },
 ];
 
-export default function Navbar() {
+export default function Navbar({
+  isLoggedIn,
+  onLoginSuccess,
+  onLogout,
+  showLogin,
+  setShowLogin,
+  onSwitchToSignup,
+  onSwitchToForgot,
+}) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,19 +35,30 @@ export default function Navbar() {
     setMenuOpen(false);
   }, [location.pathname]);
 
+  const handleLogout = () => {
+    onLogout();
+    setMenuOpen(false);
+  };
+
   return (
     <>
       <nav className={`navbar ${scrolled ? "scrolled" : "top"}`}>
         <div className="nav-inner">
 
+          {/* Logo */}
           <Link to="/" className="logo">
-            <img src={logo} alt="Chef's Atlas Logo" style={{ height: "102px", width: "auto" }} />
+            <img
+              src={logo}
+              alt="Chef's Atlas Logo"
+              style={{ height: "102px", width: "auto" }}
+            />
             <div className="logo-text">
               <span className="logo-title">Chef's Atlas</span>
               <span className="logo-sub">World Kitchen</span>
             </div>
           </Link>
 
+          {/* Nav Links */}
           <ul className="nav-links">
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
@@ -54,10 +74,19 @@ export default function Navbar() {
             ))}
           </ul>
 
+          {/* Search */}
           <div className="nav-search">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8a7060" strokeWidth="2.5" style={{ flexShrink: 0 }}>
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#8a7060"
+              strokeWidth="2.5"
+              style={{ flexShrink: 0 }}
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
             </svg>
             <input
               placeholder="Search recipes, cuisines…"
@@ -66,39 +95,85 @@ export default function Navbar() {
             />
           </div>
 
+          {/* Right Side */}
           <div className="nav-right">
             <div className="nav-divider" />
 
-            <Link to="/profile" className="profile-btn">
-              <div className="profile-avatar">A</div>
-              <span className="profile-label">User Profile</span>
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link to="/profile" className="profile-btn">
+                  <div className="profile-avatar">A</div>
+                  <span className="profile-label">User Profile</span>
+                </Link>
 
-            <Link to="/recipes/new" className="cta-btn">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M12 5v14M5 12h14"/>
-              </svg>
-              Share Recipe
-            </Link>
+                <Link to="/recipes/new" className="cta-btn">
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                  >
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  Share Recipe
+                </Link>
 
+                <button className="logout-btn" onClick={handleLogout}>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                  >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  Logout
+                </button>
+              </>
+            ) : (
+              <button
+                className="login-btn"
+                onClick={() => setShowLogin(true)}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                  <polyline points="10 17 15 12 10 7" />
+                  <line x1="15" y1="12" x2="3" y2="12" />
+                </svg>
+                Login
+              </button>
+            )}
+
+            {/* Hamburger */}
             <button
               className={`hamburger ${menuOpen ? "open" : ""}`}
               onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Menu"
             >
-              <span /><span /><span />
+              <span />
+              <span />
+              <span />
             </button>
           </div>
         </div>
       </nav>
 
+      {/* Mobile Menu */}
       <div className={`mobile-menu ${menuOpen ? "open" : ""}`}>
         <div className="mobile-search">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8a7060" strokeWidth="2.5">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input placeholder="Search recipes, cuisines, chefs…" />
+          <input placeholder="Search recipes..." />
         </div>
 
         <ul className="mobile-nav-links">
@@ -111,48 +186,48 @@ export default function Navbar() {
                 }`}
               >
                 {link.label}
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 18l6-6-6-6"/>
-                </svg>
               </Link>
             </li>
           ))}
         </ul>
 
         <div className="mobile-footer">
-          <Link to="/profile" className="mobile-profile">
-            <div
-              className="profile-avatar"
-              style={{
-                width: 34,
-                height: 34,
-                fontSize: 15,
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #c9742b 0%, #e8935c 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "white",
-                fontWeight: 600,
-                flexShrink: 0
+          {isLoggedIn ? (
+            <button className="mobile-logout" onClick={handleLogout}>
+              Logout
+            </button>
+          ) : (
+            <button
+              className="mobile-cta"
+              onClick={() => {
+                setMenuOpen(false);
+                setShowLogin(true);
               }}
             >
-              A
-            </div>
-            <div className="mobile-profile-info">
-              <span className="mobile-profile-name">User Profile</span>
-              <span className="mobile-profile-role">View Profile</span>
-            </div>
-          </Link>
-
-          <Link to="/recipes/new" className="mobile-cta">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-            Share
-          </Link>
+              Login
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Login Modal */}
+      {showLogin && (
+        <Login
+          onClose={() => setShowLogin(false)}
+          onLoginSuccess={() => {
+            onLoginSuccess();
+            setShowLogin(false);
+          }}
+          onSwitchToSignup={() => {
+            setShowLogin(false);
+            onSwitchToSignup();
+          }}
+          onSwitchToForgot={() => {
+            setShowLogin(false);
+            onSwitchToForgot();
+          }}
+        />
+      )}
     </>
   );
 }
