@@ -8,6 +8,7 @@ import Recipes from './pages/Recipes'
 import Signup from './components/Signup'
 import Home from './components/Home'
 import ForgotPassword from './components/ForgotPassword'
+import CreateRecipe from "./pages/CreateRecipe";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -71,6 +72,7 @@ function App() {
         />
         <Route path="/about" element={<About />} />
         <Route path="/recipes" element={<Recipes />} />
+        <Route path="/recipes/new" element={<CreateRecipe />} />
       </Routes>
     </BrowserRouter>
   )
