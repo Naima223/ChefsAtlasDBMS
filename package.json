@@ -3,7 +3,9 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "vite build"
+        "build": "vite build",
+        "dev:client": "npm --prefix client run dev",
+        "build:client": "npm --prefix client run build"
     },
     "devDependencies": {
         "axios": "^1.6.4",
