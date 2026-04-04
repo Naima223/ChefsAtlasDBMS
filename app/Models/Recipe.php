@@ -12,9 +12,16 @@ class Recipe extends Model
     protected $fillable = [
         'user_id',
         'title',
-        'descriptions',
+        'description',
         'ingredients',
         'instructions',
+        'average_rating',
+    ];
+
+    protected $casts = [
+        'ingredients' => 'array',
+        'instructions' => 'array',
+        'average_rating' => 'float',
     ];
 
     public function user()
@@ -26,5 +33,9 @@ class Recipe extends Model
     {
         return $this->belongsToMany(Category::class);
     }
-    
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
 }
