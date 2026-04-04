@@ -1,15 +1,49 @@
 services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    container_name: chefsatlas_app
+    env_file:
+      - .env
+    depends_on:
+      - mssql
+      - mailpit
+    ports:
+      - "${APP_PORT:-8000}:80"
+
+  client:
+    build:
+      context: .
+      dockerfile: docker/client/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api}
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    container_name: chefsatlas_client
+    depends_on:
+      - app
+    ports:
+      - "${CLIENT_PORT:-5173}:80"
+
   mssql:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: chefsatlas_mssql
     restart: unless-stopped
     environment:
       ACCEPT_EULA: "Y"
-      SA_PASSWORD: "StrongPassword123!"
+      MSSQL_PID: "Developer"
+      MSSQL_SA_PASSWORD: ${DB_PASSWORD:-StrongPassword123!}
     ports:
-      - "1433:1433"
+      - "${DB_PORT:-1433}:1433"
     volumes:
       - mssql_data:/var/opt/mssql
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: chefsatlas_mailpit
+    ports:
+      - "${MAIL_PORT:-1025}:1025"
+      - "${MAIL_UI_PORT:-8025}:8025"
 
 volumes:
   mssql_data:
