@@ -1,5 +1,3 @@
-FROM composer:2 AS composer-bin
-
 FROM php:8.2-apache-bookworm
 
 ENV ACCEPT_EULA=Y
@@ -30,8 +28,6 @@ RUN apt-get update \
     && sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/*.conf /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf \
     && apt-get purge -y --auto-remove gpg $PHPIZE_DEPS \
     && rm -rf /var/lib/apt/lists/*
-
-COPY --from=composer-bin /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
