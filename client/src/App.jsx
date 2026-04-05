@@ -1,81 +1,148 @@
-import './App.css'
-import { useState } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Navbar from './components/Navbar'
-import UserDashboard from './components/UserDashboard'
-import About from './components/About'
-import Recipes from './pages/Recipes'
-import Signup from './components/Signup'
-import Home from './components/Home'
-import ForgotPassword from './components/ForgotPassword'
-import CreateRecipe from "./pages/CreateRecipe";
+import { useEffect, useMemo, useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import "./App.css";
+import { api, setToken } from "./api/api";
+import AuthModal from "./components/AuthModal";
+import Footer from "./components/Footer";
+import SiteAbout from "./components/SiteAbout";
+import SiteHome from "./components/SiteHome";
+import TopNav from "./components/TopNav";
+import UserHub from "./components/UserHub";
+import AdminDashboard from "./pages/AdminDashboard";
+import ContactPage from "./pages/ContactPage";
+import RecipeEditor from "./pages/RecipeEditor";
+import RecipeLibrary from "./pages/RecipeLibrary";
+
+function ProtectedRoute({ user, children }) {
+  return user ? children : <Navigate to="/" replace />;
+}
+
+function AdminRoute({ user, children }) {
+  return user?.is_admin ? children : <Navigate to="/" replace />;
+}
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [showLogin, setShowLogin] = useState(false)
-  const [showSignup, setShowSignup] = useState(false)
-  const [showForgot, setShowForgot] = useState(false)
+  const [user, setUser] = useState(null);
+  const [authMode, setAuthMode] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    async function boot() {
+      try {
+        const response = await api.me();
+        setUser(response.user);
+      } catch {
+        setToken(null);
+      } finally {
+        setAuthLoading(false);
+      }
+    }
+
+    boot();
+  }, []);
+
+  const authActions = useMemo(
+    () => ({
+      async login(payload) {
+        const response = await api.login(payload);
+        setToken(response.token);
+        setUser(response.user);
+        setAuthMode(null);
+      },
+      async register(payload) {
+        const response = await api.register(payload);
+        setToken(response.token);
+        setUser(response.user);
+        setAuthMode(null);
+      },
+      async googleLogin(idToken) {
+        const response = await api.googleLogin(idToken);
+        setToken(response.token);
+        setUser(response.user);
+        setAuthMode(null);
+      },
+      async logout() {
+        try {
+          await api.logout();
+        } catch {
+          // Ignore logout API failures and clear local state anyway.
+        } finally {
+          setToken(null);
+          setUser(null);
+        }
+      },
+    }),
+    []
+  );
+
+  if (authLoading) {
+    return <div className="shell-loader">Loading Chef&apos;s Atlas...</div>;
+  }
 
   return (
     <BrowserRouter>
-      <Navbar
-        isLoggedIn={isLoggedIn}
-        onLoginSuccess={() => setIsLoggedIn(true)}
-        onLogout={() => setIsLoggedIn(false)}
-        showLogin={showLogin}
-        setShowLogin={setShowLogin}
-        onSwitchToSignup={() => { setShowLogin(false); setShowSignup(true) }}
-        onSwitchToForgot={() => { setShowLogin(false); setShowForgot(true) }}
-      />
+      <div className="app-shell">
+        <TopNav user={user} onOpenAuth={setAuthMode} onLogout={authActions.logout} />
 
-      {showSignup && (
-        <Signup
-          onClose={() => setShowSignup(false)}
-          onSignupSuccess={() => {
-            setIsLoggedIn(true)
-            setShowSignup(false)
-          }}
-          onSwitchToLogin={() => {
-            setShowSignup(false)
-            setShowLogin(true)
-          }}
-        />
-      )}
+        <main className="app-main">
+          <Routes>
+            <Route path="/" element={<SiteHome user={user} onOpenAuth={setAuthMode} />} />
+            <Route path="/about" element={<SiteAbout />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route
+              path="/recipes"
+              element={<RecipeLibrary user={user} onRequireAuth={() => setAuthMode("login")} />}
+            />
+            <Route
+              path="/recipes/new"
+              element={
+                <ProtectedRoute user={user}>
+                  <RecipeEditor user={user} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/recipes/:recipeId/edit"
+              element={
+                <ProtectedRoute user={user}>
+                  <RecipeEditor user={user} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute user={user}>
+                  <UserHub />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute user={user}>
+                  <AdminDashboard />
+                </AdminRoute>
+              }
+            />
+          </Routes>
+        </main>
 
-      {showForgot && (
-        <ForgotPassword
-          onClose={() => setShowForgot(false)}
-          onSwitchToLogin={() => {
-            setShowForgot(false)
-            setShowLogin(true)
-          }}
-        />
-      )}
+        <Footer />
 
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route
-          path="/profile"
-          element={
-            isLoggedIn
-              ? <UserDashboard />
-              : (
-                <div style={{
-                  paddingTop: '72px', minHeight: '100vh', background: '#fdf6ec',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: 'Georgia, serif', color: '#4a2c17'
-                }}>
-                  Please log in to view your profile.
-                </div>
-              )
-          }
-        />
-        <Route path="/about" element={<About />} />
-        <Route path="/recipes" element={<Recipes />} />
-        <Route path="/recipes/new" element={<CreateRecipe />} />
-      </Routes>
+        {authMode && (
+          <AuthModal
+            mode={authMode}
+            onClose={() => setAuthMode(null)}
+            onSwitchMode={setAuthMode}
+            onLogin={authActions.login}
+            onRegister={authActions.register}
+            onGoogleLogin={authActions.googleLogin}
+          />
+        )}
+      </div>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;
