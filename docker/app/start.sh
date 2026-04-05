@@ -6,11 +6,14 @@ echo "Starting Chef's Atlas app container..."
 DB_ENCRYPT_VALUE="${DB_ENCRYPT:-no}"
 DB_TRUST_CERT_VALUE="${DB_TRUST_SERVER_CERTIFICATE:-true}"
 SQLSRV_DSN="sqlsrv:Server=${DB_HOST},${DB_PORT};Database=master;Encrypt=${DB_ENCRYPT_VALUE};TrustServerCertificate=${DB_TRUST_CERT_VALUE}"
+APP_SQLSRV_DSN="sqlsrv:Server=${DB_HOST},${DB_PORT};Database=${DB_DATABASE};Encrypt=${DB_ENCRYPT_VALUE};TrustServerCertificate=${DB_TRUST_CERT_VALUE}"
 export SQLSRV_DSN
+export APP_SQLSRV_DSN
 
 if [ ! -f vendor/autoload.php ]; then
-  echo "Installing Composer dependencies..."
-  composer install --no-interaction --prefer-dist --optimize-autoloader
+  echo "Missing vendor/autoload.php."
+  echo "Install Composer dependencies on the host first so the vendor directory is available to Docker."
+  exit 1
 fi
 
 echo "Waiting for SQL Server at ${DB_HOST}:${DB_PORT}..."
@@ -28,6 +31,11 @@ php -r "try {
   fwrite(STDERR, 'Database bootstrap failed: ' . \$e->getMessage() . PHP_EOL);
   exit(1);
 }"
+
+echo "Waiting for database ${DB_DATABASE} to accept connections..."
+until php -r "try { new PDO(getenv('APP_SQLSRV_DSN'), getenv('DB_USERNAME'), getenv('DB_PASSWORD')); exit(0); } catch (Throwable \$e) { fwrite(STDERR, \$e->getMessage() . PHP_EOL); exit(1); }"; do
+  sleep 2
+done
 
 echo "Preparing Laravel..."
 mkdir -p \

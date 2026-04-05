@@ -6,6 +6,8 @@ services:
     container_name: chefsatlas_app
     env_file:
       - .env
+    environment:
+      DB_HOST: chefsatlas_mssql
     depends_on:
       - mssql
       - mailpit
