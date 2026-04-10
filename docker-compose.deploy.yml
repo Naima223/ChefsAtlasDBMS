@@ -1,0 +1,47 @@
+services:
+  app:
+    image: ${APP_IMAGE}
+    container_name: chefsatlas_app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_HOST: chefsatlas_mssql
+    depends_on:
+      - mssql
+      - mailpit
+    ports:
+      - "${APP_PORT:-8000}:80"
+
+  client:
+    image: ${CLIENT_IMAGE}
+    container_name: chefsatlas_client
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "${CLIENT_PORT:-5173}:80"
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: chefsatlas_mssql
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      MSSQL_SA_PASSWORD: ${DB_PASSWORD:-StrongPassword123!}
+    ports:
+      - "${DB_PORT:-1433}:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: chefsatlas_mailpit
+    restart: unless-stopped
+    ports:
+      - "${MAIL_PORT:-1025}:1025"
+      - "${MAIL_UI_PORT:-8025}:8025"
+
+volumes:
+  mssql_data:
