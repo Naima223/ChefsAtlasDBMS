@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Recipe;
+use App\Models\Review;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -37,9 +39,33 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
+        $trendingCategories = Category::query()
+            ->whereHas('recipes')
+            ->withCount('recipes')
+            ->orderByDesc('recipes_count')
+            ->orderBy('name')
+            ->limit(5)
+            ->get(['id', 'name']);
+
+        $risingChef = User::query()
+            ->withCount('recipes')
+            ->whereHas('recipes')
+            ->orderByDesc('recipes_count')
+            ->orderByDesc('points')
+            ->orderBy('name')
+            ->first(['id', 'name', 'username', 'points']);
+
         return response()->json([
             'top_users' => $topUsers,
             'top_recipes' => $topRecipes,
+            'trending_categories' => $trendingCategories,
+            'rising_chef' => $risingChef,
+            'platform_stats' => [
+                'recipes' => Recipe::count(),
+                'reviews' => Review::count(),
+                'categories' => Category::count(),
+                'chefs' => User::where('is_admin', false)->count(),
+            ],
         ]);
     }
 }
