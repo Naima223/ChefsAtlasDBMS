@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/api";
 import RecipePanel from "../components/RecipePanel";
-import { useToast } from "../components/ToastProvider";
+import { useToast } from "../components/useToast";
 
 export default function RecipeLibrary({ user, onRequireAuth }) {
   const [recipes, setRecipes] = useState([]);
@@ -12,7 +12,7 @@ export default function RecipeLibrary({ user, onRequireAuth }) {
   const [meta, setMeta] = useState(null);
   const { showToast } = useToast();
 
-  async function loadRecipes(nextFilters = filters) {
+  const loadRecipes = useCallback(async (nextFilters = filters) => {
     setLoading(true);
     setError("");
     try {
@@ -29,11 +29,11 @@ export default function RecipeLibrary({ user, onRequireAuth }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [categories, filters, showToast]);
 
   useEffect(() => {
     loadRecipes();
-  }, []);
+  }, [loadRecipes]);
 
   function toggleCategory(name) {
     const nextFilters = {

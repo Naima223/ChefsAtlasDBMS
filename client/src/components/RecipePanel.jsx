@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api/api";
 import ConfirmModal from "./ConfirmModal";
 import StarRating from "./StarRating";
-import { useToast } from "./ToastProvider";
+import { useToast } from "./useToast";
 
 function sameUserId(left, right) {
   return String(left) === String(right);
