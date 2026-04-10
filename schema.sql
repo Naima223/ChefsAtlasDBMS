@@ -2,11 +2,11 @@
 CREATE DATABASE cse3100_testA1;
 GO
 
-USE cse3100_testA1;
+USE cse3104_test;
 GO
 
 -- Create login and user
-CREATE LOGIN admin WITH PASSWORD = 'strong_password';
+CREATE LOGIN admin WITH PASSWORD = 'StrongPassword123!';
 CREATE USER admin FOR LOGIN admin;
 GO
 

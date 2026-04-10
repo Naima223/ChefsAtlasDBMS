@@ -17,6 +17,7 @@ Route::post('auth/google', [AuthController::class, 'google']);
 Route::get('categories', [CategoryController::class, 'index']);
 Route::get('recipes', [RecipeController::class, 'index']);
 Route::get('recipes/{recipe}', [RecipeController::class, 'show']);
+Route::get('recipe-images/{path}', [RecipeController::class, 'image'])->where('path', '.*');
 Route::get('leaderboards', [DashboardController::class, 'leaderboards']);
 Route::post('contact', [ContactController::class, 'store']);
 
@@ -27,6 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('recipes', [RecipeController::class, 'store']);
     Route::put('recipes/{recipe}', [RecipeController::class, 'update']);
+    Route::post('recipes/{recipe}', [RecipeController::class, 'update']);
     Route::delete('recipes/{recipe}', [RecipeController::class, 'destroy']);
     Route::post('recipes/{recipe}/favorite', [FavoriteController::class, 'store']);
     Route::delete('recipes/{recipe}/favorite', [FavoriteController::class, 'destroy']);
