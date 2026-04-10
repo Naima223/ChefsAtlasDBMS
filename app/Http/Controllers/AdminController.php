@@ -31,6 +31,7 @@ class AdminController extends Controller
         $owner = $recipe->user;
         $deduction = min($owner->points, self::UPLOAD_REWARD);
         $owner->decrement('points', $deduction);
+        $recipe->favoritedByUsers()->detach();
         $recipe->delete();
 
         return response()->json([
@@ -47,6 +48,10 @@ class AdminController extends Controller
         }
 
         $user->reviews()->delete();
+        $user->favorites()->detach();
+        $user->recipes->each(function (Recipe $recipe) {
+            $recipe->favoritedByUsers()->detach();
+        });
         $user->delete();
 
         return response()->json([

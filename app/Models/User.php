@@ -48,6 +48,12 @@ class User extends Authenticatable
         return $this->hasMany(Review::class);
     }
 
+    public function favorites()
+    {
+        return $this->belongsToMany(Recipe::class, 'favorite_recipe')
+            ->withTimestamps();
+    }
+
     public function scopeLeaderboard($query)
     {
         return $query->withCount('recipes')

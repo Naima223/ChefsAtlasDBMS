@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\RecipeController;
 use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
@@ -27,6 +28,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('recipes', [RecipeController::class, 'store']);
     Route::put('recipes/{recipe}', [RecipeController::class, 'update']);
     Route::delete('recipes/{recipe}', [RecipeController::class, 'destroy']);
+    Route::post('recipes/{recipe}/favorite', [FavoriteController::class, 'store']);
+    Route::delete('recipes/{recipe}/favorite', [FavoriteController::class, 'destroy']);
     Route::post('recipes/{recipe}/reviews', [ReviewController::class, 'store']);
     Route::delete('recipes/{recipe}/reviews/{review}', [ReviewController::class, 'destroy']);
 
