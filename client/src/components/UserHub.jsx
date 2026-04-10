@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/api";
 
+function sameUserId(left, right) {
+  return String(left) === String(right);
+}
+
 export default function UserHub() {
   const [dashboard, setDashboard] = useState(null);
   const [error, setError] = useState("");
@@ -35,6 +39,10 @@ export default function UserHub() {
           <span>Avg. recipe rating</span>
           <strong>{dashboard.stats.average_recipe_rating || 0}</strong>
         </div>
+        <div className="stat-card">
+          <span>Favourites</span>
+          <strong>{dashboard.stats.favorites_count}</strong>
+        </div>
       </div>
 
       <section className="stack-section">
@@ -62,6 +70,51 @@ export default function UserHub() {
                 <div className="chip-row">
                   {recipe.categories.map((category) => (
                     <span className="chip" key={category.id}>
+                      {category.name}
+                    </span>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="stack-section">
+        <div className="section-row">
+          <h2>Your Favourites</h2>
+          <Link className="button button--ghost" to="/recipes">
+            Browse Recipes
+          </Link>
+        </div>
+        {dashboard.user.favorites.length === 0 ? (
+          <div className="feedback">You have not favourited any recipes yet.</div>
+        ) : (
+          <div className="recipe-list">
+            {dashboard.user.favorites.map((recipe) => (
+              <article className="recipe-card" key={`favorite-${recipe.id}`}>
+                <div className="recipe-card__header">
+                  <div>
+                    <h3>{recipe.title}</h3>
+                    <p>{recipe.description}</p>
+                    <div className="meta-row">
+                      <span>By {recipe.user?.name || "Unknown"}</span>
+                      <span>{recipe.average_rating || 0}/5 rating</span>
+                    </div>
+                  </div>
+                  {sameUserId(recipe.user_id, dashboard.user.id) ? (
+                    <Link className="button button--ghost" to={`/recipes/${recipe.id}/edit`}>
+                      Edit
+                    </Link>
+                  ) : (
+                    <Link className="button button--ghost" to="/recipes">
+                      View in Library
+                    </Link>
+                  )}
+                </div>
+                <div className="chip-row">
+                  {recipe.categories.map((category) => (
+                    <span className="chip" key={`favorite-category-${recipe.id}-${category.id}`}>
                       {category.name}
                     </span>
                   ))}

@@ -15,12 +15,15 @@ class DashboardController extends Controller
         $user = $request->user()->load([
             'recipes.categories',
             'recipes.reviews.user',
+            'favorites.user:id,name,username',
+            'favorites.categories:id,name',
         ]);
 
         return response()->json([
             'user' => $user,
             'stats' => [
                 'recipes_count' => $user->recipes->count(),
+                'favorites_count' => $user->favorites->count(),
                 'points' => $user->points,
                 'average_recipe_rating' => round((float) $user->recipes->avg('average_rating'), 2),
             ],

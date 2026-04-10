@@ -2,6 +2,10 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/api";
 
+function sameUserId(left, right) {
+  return String(left) === String(right);
+}
+
 function ReviewForm({ recipe, onSaved }) {
   const [rating, setRating] = useState("");
   const [comment, setComment] = useState("");
@@ -60,8 +64,10 @@ export default function RecipePanel({
   showAdminActions = false,
 }) {
   const [busy, setBusy] = useState(false);
-  const canEdit = user?.id === recipe.user_id;
-  const canReview = user && user.id !== recipe.user_id;
+  const [favoriteBusy, setFavoriteBusy] = useState(false);
+  const canEdit = user && sameUserId(user.id, recipe.user_id);
+  const canReview = user && !sameUserId(user.id, recipe.user_id);
+  const isFavorited = Boolean(recipe.favorited_by_auth_user);
 
   async function handleDelete() {
     if (!window.confirm("Delete this recipe?")) return;
@@ -102,6 +108,27 @@ export default function RecipePanel({
     }
   }
 
+  async function handleFavoriteToggle() {
+    if (!user) {
+      onRequireAuth?.();
+      return;
+    }
+
+    setFavoriteBusy(true);
+    try {
+      if (isFavorited) {
+        await api.unfavoriteRecipe(recipe.id);
+      } else {
+        await api.favoriteRecipe(recipe.id);
+      }
+      onChanged?.();
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setFavoriteBusy(false);
+    }
+  }
+
   return (
     <article className="recipe-card">
       <div className="recipe-card__header">
@@ -126,6 +153,17 @@ export default function RecipePanel({
               Delete
             </button>
           </div>
+        )}
+
+        {!canEdit && (
+          <button
+            className={`button ${isFavorited ? "button--ghost" : "button--secondary"}`}
+            disabled={favoriteBusy}
+            onClick={handleFavoriteToggle}
+            type="button"
+          >
+            {favoriteBusy ? "Saving..." : isFavorited ? "Remove Favourite" : "Add Favourite"}
+          </button>
         )}
       </div>
 

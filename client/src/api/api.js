@@ -73,6 +73,8 @@ export const api = {
       body: JSON.stringify(body),
     }),
   deleteRecipe: (id) => request(`/recipes/${id}`, { method: "DELETE" }),
+  favoriteRecipe: (id) => request(`/recipes/${id}/favorite`, { method: "POST" }),
+  unfavoriteRecipe: (id) => request(`/recipes/${id}/favorite`, { method: "DELETE" }),
   categories: () => request("/categories"),
   submitReview: (recipeId, body) =>
     request(`/recipes/${recipeId}/reviews`, {

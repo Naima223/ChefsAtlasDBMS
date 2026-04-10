@@ -34,15 +34,28 @@ class RecipeController extends Controller
             }
         }
 
+        $recipes = $query->get();
+        $favoriteIds = $this->favoriteIdsForUser($request);
+
+        $recipes->each(function (Recipe $recipe) use ($favoriteIds) {
+            $recipe->setAttribute('favorited_by_auth_user', $favoriteIds->contains($recipe->id));
+        });
+
         return response()->json([
-            'data' => $query->get(),
+            'data' => $recipes,
         ]);
     }
 
-    public function show(Recipe $recipe)
+    public function show(Request $request, Recipe $recipe)
     {
+        $recipe->load(['user:id,name,username', 'categories:id,name', 'reviews.user:id,name,username']);
+        $recipe->setAttribute(
+            'favorited_by_auth_user',
+            $this->favoriteIdsForUser($request)->contains($recipe->id)
+        );
+
         return response()->json([
-            'data' => $recipe->load(['user:id,name,username', 'categories:id,name', 'reviews.user:id,name,username']),
+            'data' => $recipe,
         ]);
     }
 
@@ -135,6 +148,7 @@ class RecipeController extends Controller
             $owner->decrement('points', min($owner->points, self::UPLOAD_REWARD));
         }
 
+        $recipe->favoritedByUsers()->detach();
         $recipe->delete();
 
         return response()->json([
@@ -150,5 +164,16 @@ class RecipeController extends Controller
             ->unique()
             ->map(fn ($name) => Category::firstOrCreate(['name' => $name])->id)
             ->values();
+    }
+
+    private function favoriteIdsForUser(Request $request)
+    {
+        $user = $request->user('sanctum') ?? $request->user();
+
+        if (!$user) {
+            return collect();
+        }
+
+        return $user->favorites()->pluck('recipes.id');
     }
 }

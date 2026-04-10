@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/api";
 
 function linesToArray(value) {
@@ -7,6 +7,10 @@ function linesToArray(value) {
     .split("\n")
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function sameUserId(left, right) {
+  return String(left) === String(right);
 }
 
 export default function RecipeEditor({ user }) {
@@ -23,6 +27,7 @@ export default function RecipeEditor({ user }) {
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [loadingRecipe, setLoadingRecipe] = useState(isEditing);
 
   useEffect(() => {
     api.categories().then((response) => setCategories(response.data)).catch(() => {});
@@ -31,11 +36,12 @@ export default function RecipeEditor({ user }) {
   useEffect(() => {
     if (!isEditing) return;
 
+    setLoadingRecipe(true);
     api
       .recipe(recipeId)
       .then((response) => {
         const recipe = response.data;
-        if (recipe.user_id !== user.id) {
+        if (!sameUserId(recipe.user_id, user.id)) {
           navigate("/recipes");
           return;
         }
@@ -48,7 +54,8 @@ export default function RecipeEditor({ user }) {
           categories: (recipe.categories || []).map((item) => item.name),
         });
       })
-      .catch((loadError) => setError(loadError.message));
+      .catch((loadError) => setError(loadError.message))
+      .finally(() => setLoadingRecipe(false));
   }, [isEditing, recipeId, user.id, navigate]);
 
   function toggleCategory(name) {
@@ -76,7 +83,7 @@ export default function RecipeEditor({ user }) {
         },
         recipeId
       );
-      navigate("/recipes");
+      navigate(isEditing ? "/profile" : "/recipes");
     } catch (submitError) {
       setError(submitError.message);
     } finally {
@@ -84,10 +91,22 @@ export default function RecipeEditor({ user }) {
     }
   }
 
+  if (loadingRecipe) {
+    return <div className="feedback">Loading selected recipe...</div>;
+  }
+
   return (
     <div className="simple-page">
       <p className="eyebrow">{isEditing ? "Update Recipe" : "Share Recipe"}</p>
       <h1>{isEditing ? "Edit your recipe" : "Publish a new community recipe"}</h1>
+      {isEditing && (
+        <div className="section-row">
+          <p className="muted">You are editing only the recipe you selected.</p>
+          <Link className="button button--ghost" to="/profile">
+            Back to Dashboard
+          </Link>
+        </div>
+      )}
       <form className="stack-form recipe-form" onSubmit={handleSubmit}>
         <input
           placeholder="Recipe title"
