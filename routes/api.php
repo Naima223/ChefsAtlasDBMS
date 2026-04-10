@@ -37,5 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('admin/dashboard', [AdminController::class, 'dashboard']);
         Route::delete('admin/recipes/{recipe}', [AdminController::class, 'deleteRecipe']);
         Route::delete('admin/users/{user}', [AdminController::class, 'deleteUser']);
+        Route::delete('admin/reviews/{review}', [AdminController::class, 'deleteReview']);
+        Route::delete('admin/contacts/{contact}', [AdminController::class, 'deleteContact']);
     });
 });

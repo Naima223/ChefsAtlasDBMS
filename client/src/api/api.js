@@ -92,4 +92,8 @@ export const api = {
     request(`/admin/recipes/${id}`, { method: "DELETE" }),
   adminDeleteUser: (id) =>
     request(`/admin/users/${id}`, { method: "DELETE" }),
+  adminDeleteReview: (id) =>
+    request(`/admin/reviews/${id}`, { method: "DELETE" }),
+  adminDeleteContact: (id) =>
+    request(`/admin/contacts/${id}`, { method: "DELETE" }),
 };
