@@ -31,12 +31,12 @@ export default function Navbar({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [location.pathname]);
-
   const handleLogout = () => {
     onLogout();
+    setMenuOpen(false);
+  };
+
+  const handleMenuLinkClick = () => {
     setMenuOpen(false);
   };
 
@@ -67,6 +67,7 @@ export default function Navbar({
                   className={`nav-link ${
                     location.pathname === link.href ? "active" : ""
                   }`}
+                  onClick={handleMenuLinkClick}
                 >
                   {link.label}
                 </Link>
@@ -184,6 +185,7 @@ export default function Navbar({
                 className={`mobile-nav-link ${
                   location.pathname === link.href ? "active" : ""
                 }`}
+                onClick={handleMenuLinkClick}
               >
                 {link.label}
               </Link>

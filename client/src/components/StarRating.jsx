@@ -1,4 +1,4 @@
-export function renderStars(value, max = 5) {
+function renderStars(value, max = 5) {
   return Array.from({ length: max }, (_, index) => index < value);
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/api";
-import { useToast } from "../components/ToastProvider";
+import { useToast } from "../components/useToast";
 
 function linesToArray(value) {
   return value
