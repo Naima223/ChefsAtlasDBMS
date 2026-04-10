@@ -1,27 +1,37 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/api";
+import ConfirmModal from "./ConfirmModal";
+import StarRating from "./StarRating";
+import { useToast } from "./ToastProvider";
 
 function sameUserId(left, right) {
   return String(left) === String(right);
 }
 
 function ReviewForm({ recipe, onSaved }) {
-  const [rating, setRating] = useState("");
+  const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const { showToast } = useToast();
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (!rating) {
+      setError("Please choose a star rating before submitting.");
+      return;
+    }
+
     setSaving(true);
     setError("");
 
     try {
-      await api.submitReview(recipe.id, { rating: Number(rating), comment });
-      setRating("");
+      await api.submitReview(recipe.id, { rating, comment });
+      setRating(0);
       setComment("");
-      onSaved();
+      showToast("Submitted review successfully.");
+      onSaved?.();
     } catch (submitError) {
       setError(submitError.message);
     } finally {
@@ -30,16 +40,12 @@ function ReviewForm({ recipe, onSaved }) {
   }
 
   return (
-    <form className="stack-form stack-form--tight" onSubmit={handleSubmit}>
-      <div className="grid-two">
-        <select value={rating} onChange={(event) => setRating(event.target.value)} required>
-          <option value="">Rating</option>
-          {[1, 2, 3, 4, 5].map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </select>
+    <form className="stack-form stack-form--tight review-form" onSubmit={handleSubmit}>
+      <div className="review-form__top">
+        <div>
+          <p className="field-label">Your Rating</p>
+          <StarRating interactive label="Choose a rating" onChange={setRating} value={rating} />
+        </div>
         <button className="button button--secondary" disabled={saving} type="submit">
           {saving ? "Saving..." : "Submit Review"}
         </button>
@@ -65,46 +71,53 @@ export default function RecipePanel({
 }) {
   const [busy, setBusy] = useState(false);
   const [favoriteBusy, setFavoriteBusy] = useState(false);
+  const [confirmState, setConfirmState] = useState(null);
   const canEdit = user && sameUserId(user.id, recipe.user_id);
   const canReview = user && !sameUserId(user.id, recipe.user_id);
   const isFavorited = Boolean(recipe.favorited_by_auth_user);
+  const reviewCount = recipe.reviews_count || recipe.reviews?.length || 0;
+  const averageRating = Number(recipe.average_rating || 0);
+  const { showToast } = useToast();
 
-  async function handleDelete() {
-    if (!window.confirm("Delete this recipe?")) return;
+  async function runDelete() {
     setBusy(true);
     try {
       await api.deleteRecipe(recipe.id);
+      showToast("Deleted recipe successfully.");
       onDeleted?.();
     } catch (error) {
-      alert(error.message);
+      showToast(error.message, "error");
     } finally {
       setBusy(false);
+      setConfirmState(null);
     }
   }
 
-  async function handleAdminDeleteRecipe() {
-    if (!window.confirm("Admin delete this recipe?")) return;
+  async function runAdminDeleteRecipe() {
     setBusy(true);
     try {
       await api.adminDeleteRecipe(recipe.id);
+      showToast("Deleted recipe successfully.");
       onDeleted?.();
     } catch (error) {
-      alert(error.message);
+      showToast(error.message, "error");
     } finally {
       setBusy(false);
+      setConfirmState(null);
     }
   }
 
-  async function handleAdminDeleteUser() {
-    if (!window.confirm(`Delete user ${recipe.user?.name}?`)) return;
+  async function runAdminDeleteUser() {
     setBusy(true);
     try {
       await api.adminDeleteUser(recipe.user_id);
+      showToast("Deleted user successfully.");
       onDeleted?.();
     } catch (error) {
-      alert(error.message);
+      showToast(error.message, "error");
     } finally {
       setBusy(false);
+      setConfirmState(null);
     }
   }
 
@@ -118,12 +131,14 @@ export default function RecipePanel({
     try {
       if (isFavorited) {
         await api.unfavoriteRecipe(recipe.id);
+        showToast("Removed recipe from favorites.");
       } else {
         await api.favoriteRecipe(recipe.id);
+        showToast("Added recipe to favorites.");
       }
       onChanged?.();
     } catch (error) {
-      alert(error.message);
+      showToast(error.message, "error");
     } finally {
       setFavoriteBusy(false);
     }
@@ -131,72 +146,117 @@ export default function RecipePanel({
 
   return (
     <article className="recipe-card">
-      <div className="recipe-card__header">
-        <div>
-          <div className="section-row section-row--tight">
-            <h2>{recipe.title}</h2>
-            <span className="rating-pill">{recipe.average_rating || 0}/5</span>
-          </div>
-          <p>{recipe.description}</p>
-          <div className="meta-row">
-            <span>By {recipe.user?.name || "Unknown"}</span>
-            <span>{recipe.reviews_count || recipe.reviews?.length || 0} reviews</span>
-          </div>
+      <ConfirmModal
+        busy={busy}
+        cancelLabel="No"
+        confirmLabel="Yes"
+        danger
+        message={confirmState?.message || ""}
+        title={confirmState?.title || "Confirm Action"}
+        onCancel={() => setConfirmState(null)}
+        onConfirm={confirmState?.action}
+        open={Boolean(confirmState)}
+      />
+
+      <div className="recipe-card__hero">
+        <div className="recipe-card__image-wrap">
+          {recipe.image_url ? (
+            <img alt={recipe.title} className="recipe-card__image" src={recipe.image_url} />
+          ) : (
+            <div className="recipe-card__image recipe-card__image--placeholder">
+              <span>Fresh from the community kitchen</span>
+            </div>
+          )}
         </div>
 
-        {canEdit && (
-          <div className="section-row section-row--tight">
-            <Link className="button button--ghost" to={`/recipes/${recipe.id}/edit`}>
-              Edit
-            </Link>
-            <button className="button button--ghost" disabled={busy} onClick={handleDelete} type="button">
-              Delete
-            </button>
+        <div className="recipe-card__body">
+          <div className="recipe-card__topbar">
+            <div className="chip-row">
+              {recipe.categories?.map((category) => (
+                <span className="chip" key={category.id || category.name}>
+                  {category.name}
+                </span>
+              ))}
+            </div>
+
+            {!canEdit && (
+              <button
+                className={`button recipe-card__favorite ${isFavorited ? "button--ghost" : "button--secondary"}`}
+                disabled={favoriteBusy}
+                onClick={handleFavoriteToggle}
+                type="button"
+              >
+                {favoriteBusy ? "Saving..." : isFavorited ? "Favorited" : "Add Favorite"}
+              </button>
+            )}
           </div>
-        )}
 
-        {!canEdit && (
-          <button
-            className={`button ${isFavorited ? "button--ghost" : "button--secondary"}`}
-            disabled={favoriteBusy}
-            onClick={handleFavoriteToggle}
-            type="button"
-          >
-            {favoriteBusy ? "Saving..." : isFavorited ? "Remove Favourite" : "Add Favourite"}
-          </button>
-        )}
-      </div>
+          <div className="recipe-card__header">
+            <div>
+              <div className="recipe-card__title-row">
+                <h2>{recipe.title}</h2>
+                <div className="recipe-card__rating-inline">
+                  <StarRating label={`${averageRating} out of 5 stars`} size="sm" value={averageRating} />
+                  <span>{averageRating.toFixed(1)}</span>
+                </div>
+              </div>
+              <p>{recipe.description}</p>
+              <div className="meta-row">
+                <span>By {recipe.user?.name || "Unknown"}</span>
+                <span>{reviewCount} reviews</span>
+              </div>
+            </div>
 
-      <div className="chip-row">
-        {recipe.categories?.map((category) => (
-          <span className="chip" key={category.id || category.name}>
-            {category.name}
-          </span>
-        ))}
-      </div>
+            {canEdit && (
+              <div className="section-row section-row--tight recipe-card__owner-actions">
+                <Link className="button button--ghost" to={`/recipes/${recipe.id}/edit`}>
+                  Edit
+                </Link>
+                <button
+                  className="button button--ghost"
+                  disabled={busy}
+                  onClick={() =>
+                    setConfirmState({
+                      title: "Delete Recipe",
+                      message: "Delete recipe?",
+                      action: runDelete,
+                    })
+                  }
+                  type="button"
+                >
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
 
-      <div className="detail-grid">
-        <div>
-          <h3>Ingredients</h3>
-          <ul className="detail-list">
-            {(recipe.ingredients || []).map((ingredient, index) => (
-              <li key={`${recipe.id}-ingredient-${index}`}>{ingredient}</li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h3>Instructions</h3>
-          <ol className="detail-list">
-            {(recipe.instructions || []).map((instruction, index) => (
-              <li key={`${recipe.id}-instruction-${index}`}>{instruction}</li>
-            ))}
-          </ol>
+          <div className="detail-grid">
+            <div>
+              <h3>Ingredients</h3>
+              <ul className="detail-list">
+                {(recipe.ingredients || []).map((ingredient, index) => (
+                  <li key={`${recipe.id}-ingredient-${index}`}>{ingredient}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3>Instructions</h3>
+              <ol className="detail-list">
+                {(recipe.instructions || []).map((instruction, index) => (
+                  <li key={`${recipe.id}-instruction-${index}`}>{instruction}</li>
+                ))}
+              </ol>
+            </div>
+          </div>
         </div>
       </div>
 
       <section className="review-block">
         <div className="section-row">
-          <h3>Reviews</h3>
+          <div>
+            <h3>Reviews</h3>
+            {/* <p className="muted">Rate this recipe using the 5-star system.</p> */}
+          </div>
           {!user && (
             <button className="button button--ghost" onClick={onRequireAuth} type="button">
               Log in to review
@@ -210,7 +270,10 @@ export default function RecipePanel({
               <div className="review-item" key={review.id}>
                 <div className="section-row section-row--tight">
                   <strong>{review.user?.name || "User"}</strong>
-                  <span className="rating-pill">{review.rating}/5</span>
+                  <div className="recipe-card__rating-inline">
+                    <StarRating label={`${review.rating} out of 5 stars`} size="sm" value={review.rating} />
+                    <span>{Number(review.rating).toFixed(1)}</span>
+                  </div>
                 </div>
                 <p>{review.comment || "No written review."}</p>
               </div>
@@ -225,10 +288,32 @@ export default function RecipePanel({
 
       {showAdminActions && (
         <div className="section-row">
-          <button className="button button--ghost" disabled={busy} onClick={handleAdminDeleteRecipe} type="button">
+          <button
+            className="button button--ghost"
+            disabled={busy}
+            onClick={() =>
+              setConfirmState({
+                title: "Delete Recipe",
+                message: "Delete recipe?",
+                action: runAdminDeleteRecipe,
+              })
+            }
+            type="button"
+          >
             Admin Delete Recipe
           </button>
-          <button className="button button--ghost" disabled={busy} onClick={handleAdminDeleteUser} type="button">
+          <button
+            className="button button--ghost"
+            disabled={busy}
+            onClick={() =>
+              setConfirmState({
+                title: "Delete User",
+                message: `Delete user ${recipe.user?.name || ""}?`,
+                action: runAdminDeleteUser,
+              })
+            }
+            type="button"
+          >
             Admin Delete User
           </button>
         </div>

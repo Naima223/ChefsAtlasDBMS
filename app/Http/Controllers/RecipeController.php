@@ -7,6 +7,7 @@ use App\Models\Recipe;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 
 class RecipeController extends Controller
 {
@@ -34,15 +35,23 @@ class RecipeController extends Controller
             }
         }
 
-        $recipes = $query->get();
+        $recipes = $query->paginate(5)->withQueryString();
         $favoriteIds = $this->favoriteIdsForUser($request);
 
-        $recipes->each(function (Recipe $recipe) use ($favoriteIds) {
+        $recipes->getCollection()->each(function (Recipe $recipe) use ($favoriteIds) {
             $recipe->setAttribute('favorited_by_auth_user', $favoriteIds->contains($recipe->id));
         });
 
         return response()->json([
-            'data' => $recipes,
+            'data' => $recipes->items(),
+            'meta' => [
+                'current_page' => $recipes->currentPage(),
+                'last_page' => $recipes->lastPage(),
+                'per_page' => $recipes->perPage(),
+                'total' => $recipes->total(),
+                'from' => $recipes->firstItem(),
+                'to' => $recipes->lastItem(),
+            ],
         ]);
     }
 
@@ -59,6 +68,13 @@ class RecipeController extends Controller
         ]);
     }
 
+    public function image(string $path)
+    {
+        abort_unless(Storage::disk('public')->exists($path), Response::HTTP_NOT_FOUND);
+
+        return Storage::disk('public')->response($path);
+    }
+
     public function store(Request $request)
     {
         $user = $request->user();
@@ -72,6 +88,7 @@ class RecipeController extends Controller
             'instructions.*' => 'required|string|max:2000',
             'categories' => 'required|array|min:1',
             'categories.*' => 'required|string|max:100',
+            'image' => 'nullable|image|max:5120',
         ]);
 
         $recipe = $user->recipes()->create([
@@ -79,6 +96,9 @@ class RecipeController extends Controller
             'description' => $validated['description'],
             'ingredients' => array_values($validated['ingredients']),
             'instructions' => array_values($validated['instructions']),
+            'image_path' => $request->hasFile('image')
+                ? $request->file('image')->store('recipes', 'public')
+                : null,
         ]);
 
         $categoryIds = $this->resolveCategoryIds($validated['categories']);
@@ -95,7 +115,7 @@ class RecipeController extends Controller
     {
         $user = $request->user();
 
-        if (!$recipe || $recipe->user_id !== $user->id) {
+        if (!$recipe || (string) $recipe->user_id !== (string) $user->id) {
             return response()->json([
                 'message' => 'You can only update your own recipe.',
             ], Response::HTTP_FORBIDDEN);
@@ -110,6 +130,8 @@ class RecipeController extends Controller
             'instructions.*' => 'required|string|max:2000',
             'categories' => 'sometimes|array|min:1',
             'categories.*' => 'required|string|max:100',
+            'image' => 'nullable|image|max:5120',
+            'remove_image' => 'sometimes|boolean',
         ]);
 
         if (array_key_exists('ingredients', $validated)) {
@@ -120,7 +142,18 @@ class RecipeController extends Controller
             $validated['instructions'] = array_values($validated['instructions']);
         }
 
-        $recipe->fill(collect($validated)->except('categories')->all());
+        if ($request->hasFile('image')) {
+            if ($recipe->image_path) {
+                Storage::disk('public')->delete($recipe->image_path);
+            }
+
+            $validated['image_path'] = $request->file('image')->store('recipes', 'public');
+        } elseif (($validated['remove_image'] ?? false) && $recipe->image_path) {
+            Storage::disk('public')->delete($recipe->image_path);
+            $validated['image_path'] = null;
+        }
+
+        $recipe->fill(collect($validated)->except(['categories', 'image', 'remove_image'])->all());
         $recipe->save();
 
         if (array_key_exists('categories', $validated)) {
@@ -137,7 +170,7 @@ class RecipeController extends Controller
     {
         $user = $request->user();
 
-        if (!$recipe || $recipe->user_id !== $user->id) {
+        if (!$recipe || (string) $recipe->user_id !== (string) $user->id) {
             return response()->json([
                 'message' => 'You can only delete your own recipe.',
             ], Response::HTTP_FORBIDDEN);
@@ -148,6 +181,12 @@ class RecipeController extends Controller
             $owner->decrement('points', min($owner->points, self::UPLOAD_REWARD));
         }
 
+        if ($recipe->image_path) {
+            Storage::disk('public')->delete($recipe->image_path);
+        }
+
+        $recipe->reviews()->delete();
+        $recipe->categories()->detach();
         $recipe->favoritedByUsers()->detach();
         $recipe->delete();
 

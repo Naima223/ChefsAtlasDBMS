@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api/api";
+import { useToast } from "../components/ToastProvider";
 
 function formatDate(value) {
   if (!value) return "Unknown";
@@ -33,12 +34,12 @@ function StatCard({ label, value, hint, active = false, onClick }) {
 export default function AdminDashboard() {
   const [dashboard, setDashboard] = useState(null);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
   const [activeTab, setActiveTab] = useState("users");
   const [userQuery, setUserQuery] = useState("");
   const [busyAction, setBusyAction] = useState("");
   const [pendingAction, setPendingAction] = useState(null);
   const actionBarRef = useRef(null);
+  const { showToast } = useToast();
 
   function loadDashboard() {
     setError("");
@@ -53,12 +54,12 @@ export default function AdminDashboard() {
     setBusyAction(key);
     try {
       const response = await action();
-      setNotice(response?.message || "Action completed successfully.");
+      showToast(response?.message || "Action completed successfully.");
       setError("");
       loadDashboard();
     } catch (actionError) {
-      setNotice("");
       setError(actionError.message);
+      showToast(actionError.message, "error");
     } finally {
       setBusyAction("");
       setPendingAction(null);
@@ -67,7 +68,6 @@ export default function AdminDashboard() {
 
   function requestAdminAction(key, action, confirmation) {
     setPendingAction({ key, action, confirmation });
-    setNotice("");
     setError("");
   }
 
@@ -187,7 +187,6 @@ export default function AdminDashboard() {
         </section>
       )}
 
-      {notice && <div className="feedback feedback--success">{notice}</div>}
       {error && <div className="feedback feedback--error">{error}</div>}
 
       <section className="admin-stats-grid">

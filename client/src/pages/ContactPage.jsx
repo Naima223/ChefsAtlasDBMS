@@ -1,22 +1,44 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../api/api";
+import { useToast } from "../components/ToastProvider";
 
-export default function ContactPage() {
-  const [form, setForm] = useState({ name: "", email: "", message: "" });
+export default function ContactPage({ user, onRequireAuth }) {
+  const [form, setForm] = useState({
+    name: user?.name || "",
+    email: user?.email || "",
+    message: "",
+  });
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    setForm((current) => ({
+      ...current,
+      name: user?.name || "",
+      email: user?.email || "",
+    }));
+  }, [user]);
 
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
-    setSuccess("");
+
+    if (!user) {
+      onRequireAuth?.();
+      return;
+    }
 
     try {
       await api.contact(form);
-      setSuccess("Your message has been sent.");
-      setForm({ name: "", email: "", message: "" });
+      showToast("Your message has been sent.");
+      setForm({
+        name: user.name || "",
+        email: user.email || "",
+        message: "",
+      });
     } catch (submitError) {
       setError(submitError.message);
+      showToast(submitError.message, "error");
     }
   }
 
@@ -27,15 +49,15 @@ export default function ContactPage() {
       <form className="stack-form recipe-form" onSubmit={handleSubmit}>
         <input
           placeholder="Your name"
+          readOnly
           value={form.name}
-          onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
           required
         />
         <input
           type="email"
           placeholder="Your email"
           value={form.email}
-          onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+          readOnly
           required
         />
         <textarea
@@ -48,10 +70,15 @@ export default function ContactPage() {
           required
         />
         {error && <p className="form-error">{error}</p>}
-        {success && <p className="feedback feedback--success">{success}</p>}
-        <button className="button" type="submit">
-          Send Message
-        </button>
+        {user ? (
+          <button className="button" type="submit">
+            Send Message
+          </button>
+        ) : (
+          <button className="button" onClick={onRequireAuth} type="button">
+            Log In to Contact Admin
+          </button>
+        )}
       </form>
     </div>
   );

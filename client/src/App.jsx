@@ -7,6 +7,7 @@ import Footer from "./components/Footer";
 import SiteAbout from "./components/SiteAbout";
 import SiteHome from "./components/SiteHome";
 import TopNav from "./components/TopNav";
+import { ToastProvider, useToast } from "./components/ToastProvider";
 import UserHub from "./components/UserHub";
 import AdminDashboard from "./pages/AdminDashboard";
 import ContactPage from "./pages/ContactPage";
@@ -22,9 +23,18 @@ function AdminRoute({ user, children }) {
 }
 
 function App() {
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
+  );
+}
+
+function AppContent() {
   const [user, setUser] = useState(null);
   const [authMode, setAuthMode] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const { showToast } = useToast();
 
   useEffect(() => {
     async function boot() {
@@ -48,18 +58,21 @@ function App() {
         setToken(response.token);
         setUser(response.user);
         setAuthMode(null);
+        showToast("Log-in successful.");
       },
       async register(payload) {
         const response = await api.register(payload);
         setToken(response.token);
         setUser(response.user);
         setAuthMode(null);
+        showToast("Sign-up successful.");
       },
       async googleLogin(idToken) {
         const response = await api.googleLogin(idToken);
         setToken(response.token);
         setUser(response.user);
         setAuthMode(null);
+        showToast("Log-in successful.");
       },
       async logout() {
         try {
@@ -69,10 +82,11 @@ function App() {
         } finally {
           setToken(null);
           setUser(null);
+          showToast("You have been logged out.");
         }
       },
     }),
-    []
+    [showToast]
   );
 
   if (authLoading) {
@@ -88,7 +102,7 @@ function App() {
           <Routes>
             <Route path="/" element={<SiteHome user={user} onOpenAuth={setAuthMode} />} />
             <Route path="/about" element={<SiteAbout />} />
-            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/contact" element={<ContactPage user={user} onRequireAuth={() => setAuthMode("login")} />} />
             <Route
               path="/recipes"
               element={<RecipeLibrary user={user} onRequireAuth={() => setAuthMode("login")} />}
