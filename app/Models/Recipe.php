@@ -51,6 +51,6 @@ class Recipe extends Model
 
     public function getImageUrlAttribute()
     {
-        return $this->image_path ? url('/api/recipe-images/' . $this->image_path) : null;
+        return $this->image_path ? '/api/recipe-images/' . $this->image_path : null;
     }
 }

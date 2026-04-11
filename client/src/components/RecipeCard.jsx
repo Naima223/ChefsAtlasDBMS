@@ -3,6 +3,13 @@ import React from "react";
 const RecipeCard = ({ recipe }) => {
   return (
     <div className="border rounded-lg p-4 shadow-sm mb-4 bg-white">
+      {recipe.image_url && (
+        <img 
+          src={recipe.image_url} 
+          alt={recipe.title}
+          className="w-full h-48 object-cover rounded-md mb-3"
+        />
+      )}
       <h2 className="text-xl font-bold">{recipe.title}</h2>
       <p className="text-gray-600 mb-2">{recipe.descriptions}</p>
 
