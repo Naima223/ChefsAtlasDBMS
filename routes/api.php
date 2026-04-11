@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\RecipeController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\TipController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('register', [AuthController::class, 'register']);
@@ -19,6 +20,7 @@ Route::get('recipes', [RecipeController::class, 'index']);
 Route::get('recipes/{recipe}', [RecipeController::class, 'show']);
 Route::get('recipe-images/{path}', [RecipeController::class, 'image'])->where('path', '.*');
 Route::get('leaderboards', [DashboardController::class, 'leaderboards']);
+Route::get('users/{user}/tips', [TipController::class, 'show']);
 Route::post('contact', [ContactController::class, 'store']);
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -34,6 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('recipes/{recipe}/favorite', [FavoriteController::class, 'destroy']);
     Route::post('recipes/{recipe}/reviews', [ReviewController::class, 'store']);
     Route::delete('recipes/{recipe}/reviews/{review}', [ReviewController::class, 'destroy']);
+    Route::post('tips', [TipController::class, 'store']);
 
     Route::middleware('admin')->group(function () {
         Route::get('admin/dashboard', [AdminController::class, 'dashboard']);

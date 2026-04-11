@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api/api";
 import ConfirmModal from "./ConfirmModal";
 import StarRating from "./StarRating";
+import TipModal from "./TipModal";
 import { useToast } from "./useToast";
 
 function sameUserId(left, right) {
@@ -72,6 +73,7 @@ export default function RecipePanel({
   const [busy, setBusy] = useState(false);
   const [favoriteBusy, setFavoriteBusy] = useState(false);
   const [confirmState, setConfirmState] = useState(null);
+  const [showTipModal, setShowTipModal] = useState(false);
   const canEdit = user && sameUserId(user.id, recipe.user_id);
   const canReview = user && !sameUserId(user.id, recipe.user_id);
   const isFavorited = Boolean(recipe.favorited_by_auth_user);
@@ -146,6 +148,13 @@ export default function RecipePanel({
 
   return (
     <article className="recipe-card">
+      {showTipModal && (
+        <TipModal
+          user={recipe.user}
+          onClose={() => setShowTipModal(false)}
+          onSuccess={() => setShowTipModal(false)}
+        />
+      )}
       <ConfirmModal
         busy={busy}
         cancelLabel="No"
@@ -180,14 +189,25 @@ export default function RecipePanel({
             </div>
 
             {!canEdit && (
-              <button
-                className={`button recipe-card__favorite ${isFavorited ? "button--ghost" : "button--secondary"}`}
-                disabled={favoriteBusy}
-                onClick={handleFavoriteToggle}
-                type="button"
-              >
-                {favoriteBusy ? "Saving..." : isFavorited ? "Favorited" : "Add Favorite"}
-              </button>
+              <div className="recipe-card__actions">
+                <button
+                  className={`button recipe-card__favorite ${isFavorited ? "button--ghost" : "button--secondary"}`}
+                  disabled={favoriteBusy}
+                  onClick={handleFavoriteToggle}
+                  type="button"
+                >
+                  {favoriteBusy ? "Saving..." : isFavorited ? "Favorited" : "Add Favorite"}
+                </button>
+                {user && (
+                  <button
+                    className="button button--tip"
+                    onClick={() => setShowTipModal(true)}
+                    type="button"
+                  >
+                    ☕ Coffee
+                  </button>
+                )}
+              </div>
             )}
           </div>
 

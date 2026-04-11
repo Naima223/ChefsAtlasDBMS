@@ -54,6 +54,16 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function sentTips()
+    {
+        return $this->hasMany(Tip::class, 'sender_id');
+    }
+
+    public function receivedTips()
+    {
+        return $this->hasMany(Tip::class, 'recipient_id');
+    }
+
     public function scopeLeaderboard($query)
     {
         return $query->withCount('recipes')

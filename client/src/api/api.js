@@ -199,4 +199,12 @@ export const api = {
     request(`/admin/reviews/${id}`, { method: "DELETE" }, { errorMessage: "We couldn't delete this review right now." }),
   adminDeleteContact: (id) =>
     request(`/admin/contacts/${id}`, { method: "DELETE" }, { errorMessage: "We couldn't archive this message right now." }),
+  sendTip: (body) =>
+    request(
+      "/tips",
+      { method: "POST", body: JSON.stringify(body) },
+      { errorMessage: "We couldn't send your tip right now." }
+    ),
+  getUserTips: (userId) =>
+    request(`/users/${userId}/tips`, {}, { errorMessage: "We couldn't load tips right now." }),
 };
