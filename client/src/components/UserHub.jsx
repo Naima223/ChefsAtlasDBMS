@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/api";
+import { useToast } from "./useToast";
 
 function sameUserId(left, right) {
   return String(left) === String(right);
@@ -36,34 +37,85 @@ function IconTrophy() {
     </svg>
   );
 }
+function IconCoffee() {
+  return <span style={{ fontSize: "0.9rem" }}>☕</span>;
+}
+
+function toNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatCurrency(value) {
+  return toNumber(value).toFixed(2);
+}
 
 export default function UserHub() {
   const [dashboard, setDashboard] = useState(null);
+  const [tips, setTips] = useState([]);
+  const [tipStats, setTipStats] = useState(null);
   const [error, setError] = useState("");
+  const { showToast } = useToast();
 
   useEffect(() => {
-    api.dashboard().then(setDashboard).catch((err) => setError(err.message));
+    const loadData = async () => {
+      try {
+        const dashboardData = await api.dashboard();
+
+        if (!dashboardData || !dashboardData.user) {
+          throw new Error("Invalid dashboard response — missing user data");
+        }
+
+        setDashboard(dashboardData);
+
+        const userId = dashboardData.user.id;
+        if (userId != null) {
+          try {
+            const tipsData = await api.getUserTips(userId);
+            setTips(Array.isArray(tipsData?.data) ? tipsData.data : []);
+            setTipStats(tipsData?.stats || null);
+          } catch (tipsError) {
+            setTips([]);
+            setTipStats(null);
+            showToast("Your dashboard loaded, but tip activity could not be fetched right now.", "error");
+          }
+        }
+      } catch (err) {
+        console.error("Dashboard error:", err);
+        const msg = err.message || "Failed to load dashboard";
+        setError(msg);
+        showToast(msg, "error");
+      }
+    };
+
+    loadData();
   }, []);
 
   if (error) {
     return (
-      <div className="app-main">
-        <div className="feedback feedback--error">{error}</div>
-      </div>
+      <div className="feedback feedback--error">{error}</div>
     );
   }
 
-  if (!dashboard) {
+  if (!dashboard || !dashboard.user) {
     return <div className="shell-loader">Loading dashboard…</div>;
   }
 
   const { user, stats } = dashboard;
-  const initials = user.name
+  if (!user || !stats) {
+    return <div className="shell-loader">Loading dashboard…</div>;
+  }
+
+  const initials = (user.name || "?")
     .split(" ")
+    .filter((w) => w.length > 0)
     .map((w) => w[0])
     .join("")
     .slice(0, 2)
-    .toUpperCase();
+    .toUpperCase() || "??";
+
+  const userRecipes = user.recipes || [];
+  const userFavorites = user.favorites || [];
 
   return (
     <div className="simple-page" style={{ gap: 36 }}>
@@ -74,7 +126,6 @@ export default function UserHub() {
           <p className="eyebrow" style={{ margin: 0 }}>Your Dashboard</p>
 
           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            {/* Monogram avatar */}
             <div style={{
               width: 70, height: 70, borderRadius: "50%", flexShrink: 0,
               background: "linear-gradient(145deg,#c9882c 0%,#b84e20 55%,#1f5240 100%)",
@@ -101,7 +152,6 @@ export default function UserHub() {
           </div>
         </div>
 
-        {/* Quick-action panel */}
         <div className="admin-hero__panel">
           <div className="admin-highlight">
             <span className="admin-highlight__label" style={{ color: "rgba(255,246,235,.5)" }}>
@@ -120,7 +170,7 @@ export default function UserHub() {
       </div>
 
       {/* ── Stats ──────────────────────────────────────────────────── */}
-      <div className="admin-stats-grid" style={{ gridTemplateColumns: "repeat(4,minmax(0,1fr))" }}>
+      <div className="admin-stats-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
         <div className="admin-stat">
           <span className="admin-stat__label" style={{ color: "var(--brand)", display: "flex", alignItems: "center", gap: 6 }}>
             <IconTrophy /> Points
@@ -149,6 +199,13 @@ export default function UserHub() {
           <strong className="admin-stat__value">{stats.favorites_count}</strong>
           <span className="admin-stat__hint">Saved recipes</span>
         </div>
+        <div className="admin-stat">
+          <span className="admin-stat__label" style={{ color: "var(--gold)", display: "flex", alignItems: "center", gap: 6 }}>
+            <IconCoffee /> Tips
+          </span>
+          <strong className="admin-stat__value">${formatCurrency(tipStats?.total_received)}</strong>
+          <span className="admin-stat__hint">Coffees bought</span>
+        </div>
       </div>
 
       {/* ── Your Recipes ───────────────────────────────────────────── */}
@@ -165,7 +222,7 @@ export default function UserHub() {
           </Link>
         </div>
 
-        {user.recipes.length === 0 ? (
+        {userRecipes.length === 0 ? (
           <div className="feedback" style={{ textAlign: "center", padding: "52px 24px" }}>
             <div style={{ fontSize: "2.8rem", marginBottom: 12, opacity: 0.35 }}>🍳</div>
             <strong style={{ display: "block", fontFamily: "var(--font-display)", fontSize: "1.1rem", marginBottom: 6 }}>
@@ -176,10 +233,9 @@ export default function UserHub() {
             </span>
           </div>
         ) : (
-          /* Horizontal scrolling shelf — reuses existing recipe-shelf classes */
           <div className="recipe-shelf">
             <div className="recipe-shelf__track">
-              {user.recipes.map((recipe) => (
+              {userRecipes.map((recipe) => (
                 <article className="recipe-shelf__card" key={recipe.id}>
                   <div className="recipe-shelf__media">
                     <span className="recipe-shelf__badge">#{recipe.id}</span>
@@ -191,12 +247,15 @@ export default function UserHub() {
                     <h3 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: "1.1rem", lineHeight: 1.15 }}>
                       {recipe.title}
                     </h3>
-                    <p style={{ margin: 0, color: "var(--muted)", fontWeight: 300, lineHeight: 1.58,
-                      display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                    <p style={{
+                      margin: 0, color: "var(--muted)", fontWeight: 300, lineHeight: 1.58,
+                      display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
+                    }}>
                       {recipe.description}
                     </p>
                     <div className="chip-row" style={{ marginTop: 4 }}>
-                      {recipe.categories.map((cat) => (
+                      {/* FIX: categories may be null/undefined */}
+                      {(recipe.categories || []).map((cat) => (
                         <span className="chip" key={cat.id}>{cat.name}</span>
                       ))}
                     </div>
@@ -215,6 +274,64 @@ export default function UserHub() {
         )}
       </section>
 
+      {/* ── Tips Received ──────────────────────────────────────────── */}
+      <section>
+        <div className="section-row" style={{ marginBottom: 20 }}>
+          <div>
+            <p className="eyebrow" style={{ margin: "0 0 4px" }}>Community Love</p>
+            <h2 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: "1.85rem", letterSpacing: "-0.02em" }}>
+              ☕ Tips Received
+            </h2>
+          </div>
+        </div>
+
+        {tipStats && (
+          <div className="tip-stats" style={{ marginBottom: 24 }}>
+            <div className="tip-stat">
+              <span className="tip-stat-value">${formatCurrency(tipStats?.total_received)}</span>
+              <span className="tip-stat-label">Total Raised</span>
+            </div>
+            <div className="tip-stat">
+              <span className="tip-stat-value">{toNumber(tipStats?.tips_count)}</span>
+              <span className="tip-stat-label">Supporters</span>
+            </div>
+          </div>
+        )}
+
+        {tips.length === 0 ? (
+          <div className="feedback" style={{ textAlign: "center", padding: "52px 24px" }}>
+            <div style={{ fontSize: "2.8rem", marginBottom: 12, opacity: 0.35 }}>☕</div>
+            <strong style={{ display: "block", fontFamily: "var(--font-display)", fontSize: "1.1rem", marginBottom: 6 }}>
+              No tips yet
+            </strong>
+            <span style={{ color: "var(--muted)", fontWeight: 300 }}>
+              Share amazing recipes and supporters will buy you coffee!
+            </span>
+          </div>
+        ) : (
+          <div className="tips-section">
+            <ul className="tip-list">
+              {tips.map((tip) => (
+                <li key={tip.id} className="tip-item">
+                  <div className="tip-item-from">
+                    <strong>{tip.sender?.name || "Anonymous Supporter"}</strong>
+                    {tip.message && (
+                      <em style={{ color: "var(--muted)", fontSize: "0.9rem", fontStyle: "italic" }}>
+                        "{tip.message}"
+                      </em>
+                    )}
+                    <span style={{ fontSize: "0.8rem", color: "var(--muted-light)" }}>
+                      {tip.created_at ? new Date(tip.created_at).toLocaleDateString() : "Unknown"}
+                    </span>
+                  </div>
+                  <span className="tip-item-amount">${formatCurrency(tip.amount)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+
       {/* ── Favourites ─────────────────────────────────────────────── */}
       <section>
         <div className="section-row" style={{ marginBottom: 20 }}>
@@ -227,7 +344,7 @@ export default function UserHub() {
           <Link className="button button--ghost" to="/recipes">Browse Recipes</Link>
         </div>
 
-        {user.favorites.length === 0 ? (
+        {userFavorites.length === 0 ? (
           <div className="feedback" style={{ textAlign: "center", padding: "52px 24px" }}>
             <div style={{ fontSize: "2.8rem", marginBottom: 12, opacity: 0.35 }}>🤍</div>
             <strong style={{ display: "block", fontFamily: "var(--font-display)", fontSize: "1.1rem", marginBottom: 6 }}>
@@ -239,7 +356,7 @@ export default function UserHub() {
           </div>
         ) : (
           <div className="recipe-list" style={{ gap: 16 }}>
-            {user.favorites.map((recipe) => (
+            {userFavorites.map((recipe) => (
               <article className="recipe-card" key={`favorite-${recipe.id}`}>
                 <div className="recipe-card__header" style={{
                   display: "grid", gridTemplateColumns: "1fr auto", gap: 16, alignItems: "start",
@@ -248,7 +365,6 @@ export default function UserHub() {
                     <h3 style={{ margin: 0 }}>{recipe.title}</h3>
                     <p style={{ margin: 0 }}>{recipe.description}</p>
                     <div className="meta-row" style={{ gap: 16, marginTop: 2 }}>
-                      {/* Mini avatar + author */}
                       <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{
                           width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
@@ -256,6 +372,7 @@ export default function UserHub() {
                           display: "inline-grid", placeItems: "center",
                           fontSize: "0.6rem", color: "white", fontWeight: 700,
                         }}>
+                          {/* FIX: safe access on recipe.user */}
                           {(recipe.user?.name || "?")[0].toUpperCase()}
                         </span>
                         By {recipe.user?.name || "Unknown"}
@@ -276,7 +393,8 @@ export default function UserHub() {
                 </div>
 
                 <div className="chip-row" style={{ marginTop: 14 }}>
-                  {recipe.categories.map((cat) => (
+                  {/* FIX: categories may be null/undefined */}
+                  {(recipe.categories || []).map((cat) => (
                     <span className="chip" key={`fav-cat-${recipe.id}-${cat.id}`}>{cat.name}</span>
                   ))}
                 </div>

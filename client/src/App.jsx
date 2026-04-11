@@ -14,6 +14,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ContactPage from "./pages/ContactPage";
 import RecipeEditor from "./pages/RecipeEditor";
 import RecipeLibrary from "./pages/RecipeLibrary";
+import UserProfile from "./pages/UserProfile";
 
 function ProtectedRoute({ user, children }) {
   return user ? children : <Navigate to="/" replace />;
@@ -131,6 +132,10 @@ function AppContent() {
                   <UserHub />
                 </ProtectedRoute>
               }
+            />
+            <Route
+              path="/users/:userId"
+              element={<UserProfile user={user} />}
             />
             <Route
               path="/admin"

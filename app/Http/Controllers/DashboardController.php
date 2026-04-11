@@ -12,11 +12,15 @@ class DashboardController extends Controller
 {
     public function user(Request $request)
     {
-        $user = $request->user()->load([
+        $user = $request->user();
+        
+        // Load recipes with categories and reviews
+        $user->load([
             'recipes.categories',
             'recipes.reviews.user',
-            'favorites.user:id,name,username',
-            'favorites.categories:id,name',
+            'favorites' => function($query) {
+                $query->with('user', 'categories');
+            },
         ]);
 
         return response()->json([
