@@ -10,11 +10,13 @@ return new class extends Migration
     {
         Schema::create('favorite_recipe', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('recipe_id')->constrained()->noActionOnDelete();
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('recipe_id');
             $table->timestamps();
-
             $table->unique(['user_id', 'recipe_id']);
+            
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreign('recipe_id')->references('id')->on('recipes')->noActionOnDelete();
         });
     }
 

@@ -1,15 +1,13 @@
 import { Link, NavLink } from "react-router-dom";
+import logo from "../assets/logo.png";
 
 export default function TopNav({ user, onOpenAuth, onLogout }) {
   return (
     <header className="site-header">
       <div className="site-header__inner">
         <Link to="/" className="brand-mark">
-          <span className="brand-mark__badge">CA</span>
-          <span>
-            <strong>Chef&apos;s Atlas</strong>
-            <small>Recipe community</small>
-          </span>
+          <img src={logo} alt="Chef's Atlas" className="brand-mark__logo" />
+          <strong>Chef's Atlas</strong>
         </Link>
 
         <nav className="site-nav">

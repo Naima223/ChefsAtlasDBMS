@@ -10,12 +10,15 @@ return new class extends Migration
     {
         Schema::create('reviews', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('recipe_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained()->noActionOnDelete();
+            $table->unsignedBigInteger('recipe_id');
+            $table->unsignedBigInteger('user_id');
             $table->unsignedTinyInteger('rating')->default(0);
             $table->text('comment')->nullable();
             $table->timestamps();
             $table->unique(['recipe_id', 'user_id']);
+            
+            $table->foreign('recipe_id')->references('id')->on('recipes')->cascadeOnDelete();
+            $table->foreign('user_id')->references('id')->on('users')->noActionOnDelete();
         });
     }
 

@@ -10,10 +10,13 @@ return new class extends Migration
     {
         Schema::create('category_recipe', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('recipe_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('category_id')->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('recipe_id');
+            $table->unsignedBigInteger('category_id');
             $table->timestamps();
             $table->unique(['recipe_id', 'category_id']);
+            
+            $table->foreign('recipe_id')->references('id')->on('recipes')->cascadeOnDelete();
+            $table->foreign('category_id')->references('id')->on('categories')->cascadeOnDelete();
         });
     }
 

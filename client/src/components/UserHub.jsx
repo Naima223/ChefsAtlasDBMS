@@ -6,6 +6,37 @@ function sameUserId(left, right) {
   return String(left) === String(right);
 }
 
+function IconStar() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 2l2.9 8.9H23l-7.5 5.4 2.9 8.9L12 20l-8.4 5.2 2.9-8.9L1 10.9h8.1z" />
+    </svg>
+  );
+}
+function IconUpload() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
+    </svg>
+  );
+}
+function IconHeart() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+    </svg>
+  );
+}
+function IconTrophy() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+      <polyline points="8 21 12 17 16 21" /><line x1="12" y1="17" x2="12" y2="11" />
+      <path d="M7 4H4a2 2 0 000 4c0 2.21 1.79 4 4 4" /><path d="M17 4h3a2 2 0 010 4c0 2.21-1.79 4-4 4" />
+      <rect x="7" y="2" width="10" height="9" rx="2" />
+    </svg>
+  );
+}
+
 export default function UserHub() {
   const [dashboard, setDashboard] = useState(null);
   const [error, setError] = useState("");
@@ -15,63 +46,238 @@ export default function UserHub() {
   }, []);
 
   if (error) {
-    return <div className="feedback feedback--error">{error}</div>;
+    return (
+      <div className="app-main">
+        <div className="feedback feedback--error">{error}</div>
+      </div>
+    );
   }
 
   if (!dashboard) {
-    return <div className="feedback">Loading dashboard...</div>;
+    return <div className="shell-loader">Loading dashboard…</div>;
   }
 
+  const { user, stats } = dashboard;
+  const initials = user.name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
-    <div className="simple-page">
-      <p className="eyebrow">Your Dashboard</p>
-      <h1>{dashboard.user.name}</h1>
-      <div className="stats-grid">
-        <div className="stat-card">
-          <span>Points</span>
-          <strong>{dashboard.stats.points}</strong>
+    <div className="simple-page" style={{ gap: 36 }}>
+
+      {/* ── Hero ───────────────────────────────────────────────────── */}
+      <div className="admin-hero" style={{ borderRadius: "var(--r-xl)", minHeight: 220 }}>
+        <div className="admin-hero__copy" style={{ gap: 18 }}>
+          <p className="eyebrow" style={{ margin: 0 }}>Your Dashboard</p>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            {/* Monogram avatar */}
+            <div style={{
+              width: 70, height: 70, borderRadius: "50%", flexShrink: 0,
+              background: "linear-gradient(145deg,#c9882c 0%,#b84e20 55%,#1f5240 100%)",
+              display: "grid", placeItems: "center",
+              fontFamily: "var(--font-display)", fontSize: "1.75rem", color: "#fff9f1",
+              boxShadow: "0 8px 28px rgba(122,48,16,.45), inset 0 1px 0 rgba(255,255,255,.22)",
+            }}>
+              {initials}
+            </div>
+            <div>
+              <h1 style={{ margin: 0, fontSize: "clamp(1.8rem,4vw,3rem)", lineHeight: 1 }}>
+                {user.name}
+              </h1>
+              <p style={{ margin: "6px 0 0", color: "rgba(255,246,235,.6)", fontWeight: 300, fontSize: "0.92rem" }}>
+                Recipe creator &amp; food enthusiast
+              </p>
+            </div>
+          </div>
+
+          <div className="admin-badges">
+            <span className="chip">👨‍🍳 Chef</span>
+            <span className="chip">{stats.recipes_count} Recipes</span>
+            <span className="chip"><IconStar /> {stats.average_recipe_rating || 0} avg</span>
+          </div>
         </div>
-        <div className="stat-card">
-          <span>Uploads</span>
-          <strong>{dashboard.stats.recipes_count}</strong>
-        </div>
-        <div className="stat-card">
-          <span>Avg. recipe rating</span>
-          <strong>{dashboard.stats.average_recipe_rating || 0}</strong>
-        </div>
-        <div className="stat-card">
-          <span>Favourites</span>
-          <strong>{dashboard.stats.favorites_count}</strong>
+
+        {/* Quick-action panel */}
+        <div className="admin-hero__panel">
+          <div className="admin-highlight">
+            <span className="admin-highlight__label" style={{ color: "rgba(255,246,235,.5)" }}>
+              Quick Actions
+            </span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 6 }}>
+              <Link className="button" to="/recipes/new" style={{ justifyContent: "center" }}>
+                <IconUpload /> Upload New Recipe
+              </Link>
+              <Link className="button button--ghost" to="/recipes" style={{ justifyContent: "center" }}>
+                Browse Library
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
 
-      <section className="stack-section">
-        <div className="section-row">
-          <h2>Your Recipes</h2>
+      {/* ── Stats ──────────────────────────────────────────────────── */}
+      <div className="admin-stats-grid" style={{ gridTemplateColumns: "repeat(4,minmax(0,1fr))" }}>
+        <div className="admin-stat">
+          <span className="admin-stat__label" style={{ color: "var(--brand)", display: "flex", alignItems: "center", gap: 6 }}>
+            <IconTrophy /> Points
+          </span>
+          <strong className="admin-stat__value">{stats.points}</strong>
+          <span className="admin-stat__hint">Total earned</span>
+        </div>
+        <div className="admin-stat">
+          <span className="admin-stat__label" style={{ color: "var(--accent)", display: "flex", alignItems: "center", gap: 6 }}>
+            <IconUpload /> Uploads
+          </span>
+          <strong className="admin-stat__value">{stats.recipes_count}</strong>
+          <span className="admin-stat__hint">Recipes shared</span>
+        </div>
+        <div className="admin-stat">
+          <span className="admin-stat__label" style={{ color: "var(--gold)", display: "flex", alignItems: "center", gap: 6 }}>
+            <IconStar /> Avg Rating
+          </span>
+          <strong className="admin-stat__value">{stats.average_recipe_rating || 0}</strong>
+          <span className="admin-stat__hint">Out of 5.0</span>
+        </div>
+        <div className="admin-stat">
+          <span className="admin-stat__label" style={{ color: "var(--brand)", display: "flex", alignItems: "center", gap: 6 }}>
+            <IconHeart /> Favourites
+          </span>
+          <strong className="admin-stat__value">{stats.favorites_count}</strong>
+          <span className="admin-stat__hint">Saved recipes</span>
+        </div>
+      </div>
+
+      {/* ── Your Recipes ───────────────────────────────────────────── */}
+      <section>
+        <div className="section-row" style={{ marginBottom: 20 }}>
+          <div>
+            <p className="eyebrow" style={{ margin: "0 0 4px" }}>Your Creations</p>
+            <h2 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: "1.85rem", letterSpacing: "-0.02em" }}>
+              Your Recipes
+            </h2>
+          </div>
           <Link className="button button--secondary" to="/recipes/new">
-            Add Recipe
+            <IconUpload /> Add Recipe
           </Link>
         </div>
-        {dashboard.user.recipes.length === 0 ? (
-          <div className="feedback">You have not uploaded any recipes yet.</div>
+
+        {user.recipes.length === 0 ? (
+          <div className="feedback" style={{ textAlign: "center", padding: "52px 24px" }}>
+            <div style={{ fontSize: "2.8rem", marginBottom: 12, opacity: 0.35 }}>🍳</div>
+            <strong style={{ display: "block", fontFamily: "var(--font-display)", fontSize: "1.1rem", marginBottom: 6 }}>
+              No recipes yet
+            </strong>
+            <span style={{ color: "var(--muted)", fontWeight: 300 }}>
+              Share your first dish with the community.
+            </span>
+          </div>
         ) : (
-          <div className="recipe-list">
-            {dashboard.user.recipes.map((recipe) => (
-              <article className="recipe-card" key={recipe.id}>
-                <div className="recipe-card__header">
-                  <div>
-                    <h3>{recipe.title}</h3>
-                    <p>{recipe.description}</p>
-                  </div>
-                  <Link className="button button--ghost" to={`/recipes/${recipe.id}/edit`}>
-                    Edit
-                  </Link>
-                </div>
-                <div className="chip-row">
-                  {recipe.categories.map((category) => (
-                    <span className="chip" key={category.id}>
-                      {category.name}
+          /* Horizontal scrolling shelf — reuses existing recipe-shelf classes */
+          <div className="recipe-shelf">
+            <div className="recipe-shelf__track">
+              {user.recipes.map((recipe) => (
+                <article className="recipe-shelf__card" key={recipe.id}>
+                  <div className="recipe-shelf__media">
+                    <span className="recipe-shelf__badge">#{recipe.id}</span>
+                    <span className="recipe-shelf__rating">
+                      <IconStar /> {recipe.average_rating || "New"}
                     </span>
+                  </div>
+                  <div className="recipe-shelf__body">
+                    <h3 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: "1.1rem", lineHeight: 1.15 }}>
+                      {recipe.title}
+                    </h3>
+                    <p style={{ margin: 0, color: "var(--muted)", fontWeight: 300, lineHeight: 1.58,
+                      display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                      {recipe.description}
+                    </p>
+                    <div className="chip-row" style={{ marginTop: 4 }}>
+                      {recipe.categories.map((cat) => (
+                        <span className="chip" key={cat.id}>{cat.name}</span>
+                      ))}
+                    </div>
+                    <div className="recipe-shelf__meta">
+                      <span>Your recipe</span>
+                      <Link className="button button--ghost" to={`/recipes/${recipe.id}/edit`}
+                        style={{ padding: "7px 16px", fontSize: "0.82rem" }}>
+                        Edit
+                      </Link>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ── Favourites ─────────────────────────────────────────────── */}
+      <section>
+        <div className="section-row" style={{ marginBottom: 20 }}>
+          <div>
+            <p className="eyebrow" style={{ margin: "0 0 4px" }}>Saved by You</p>
+            <h2 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: "1.85rem", letterSpacing: "-0.02em" }}>
+              Your Favourites
+            </h2>
+          </div>
+          <Link className="button button--ghost" to="/recipes">Browse Recipes</Link>
+        </div>
+
+        {user.favorites.length === 0 ? (
+          <div className="feedback" style={{ textAlign: "center", padding: "52px 24px" }}>
+            <div style={{ fontSize: "2.8rem", marginBottom: 12, opacity: 0.35 }}>🤍</div>
+            <strong style={{ display: "block", fontFamily: "var(--font-display)", fontSize: "1.1rem", marginBottom: 6 }}>
+              Nothing saved yet
+            </strong>
+            <span style={{ color: "var(--muted)", fontWeight: 300 }}>
+              Explore the library and save recipes you love.
+            </span>
+          </div>
+        ) : (
+          <div className="recipe-list" style={{ gap: 16 }}>
+            {user.favorites.map((recipe) => (
+              <article className="recipe-card" key={`favorite-${recipe.id}`}>
+                <div className="recipe-card__header" style={{
+                  display: "grid", gridTemplateColumns: "1fr auto", gap: 16, alignItems: "start",
+                }}>
+                  <div style={{ display: "grid", gap: 6 }}>
+                    <h3 style={{ margin: 0 }}>{recipe.title}</h3>
+                    <p style={{ margin: 0 }}>{recipe.description}</p>
+                    <div className="meta-row" style={{ gap: 16, marginTop: 2 }}>
+                      {/* Mini avatar + author */}
+                      <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{
+                          width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
+                          background: "linear-gradient(135deg,var(--brand),var(--accent))",
+                          display: "inline-grid", placeItems: "center",
+                          fontSize: "0.6rem", color: "white", fontWeight: 700,
+                        }}>
+                          {(recipe.user?.name || "?")[0].toUpperCase()}
+                        </span>
+                        By {recipe.user?.name || "Unknown"}
+                      </span>
+                      <span className="rating-pill" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                        <IconStar /> {recipe.average_rating || 0} / 5
+                      </span>
+                    </div>
+                  </div>
+
+                  {sameUserId(recipe.user_id, user.id) ? (
+                    <Link className="button button--ghost" to={`/recipes/${recipe.id}/edit`}
+                      style={{ padding: "9px 18px", fontSize: "0.86rem" }}>Edit</Link>
+                  ) : (
+                    <Link className="button button--ghost" to="/recipes"
+                      style={{ padding: "9px 18px", fontSize: "0.86rem" }}>View</Link>
+                  )}
+                </div>
+
+                <div className="chip-row" style={{ marginTop: 14 }}>
+                  {recipe.categories.map((cat) => (
+                    <span className="chip" key={`fav-cat-${recipe.id}-${cat.id}`}>{cat.name}</span>
                   ))}
                 </div>
               </article>
@@ -80,50 +286,6 @@ export default function UserHub() {
         )}
       </section>
 
-      <section className="stack-section">
-        <div className="section-row">
-          <h2>Your Favourites</h2>
-          <Link className="button button--ghost" to="/recipes">
-            Browse Recipes
-          </Link>
-        </div>
-        {dashboard.user.favorites.length === 0 ? (
-          <div className="feedback">You have not favourited any recipes yet.</div>
-        ) : (
-          <div className="recipe-list">
-            {dashboard.user.favorites.map((recipe) => (
-              <article className="recipe-card" key={`favorite-${recipe.id}`}>
-                <div className="recipe-card__header">
-                  <div>
-                    <h3>{recipe.title}</h3>
-                    <p>{recipe.description}</p>
-                    <div className="meta-row">
-                      <span>By {recipe.user?.name || "Unknown"}</span>
-                      <span>{recipe.average_rating || 0}/5 rating</span>
-                    </div>
-                  </div>
-                  {sameUserId(recipe.user_id, dashboard.user.id) ? (
-                    <Link className="button button--ghost" to={`/recipes/${recipe.id}/edit`}>
-                      Edit
-                    </Link>
-                  ) : (
-                    <Link className="button button--ghost" to="/recipes">
-                      View in Library
-                    </Link>
-                  )}
-                </div>
-                <div className="chip-row">
-                  {recipe.categories.map((category) => (
-                    <span className="chip" key={`favorite-category-${recipe.id}-${category.id}`}>
-                      {category.name}
-                    </span>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
     </div>
   );
 }
