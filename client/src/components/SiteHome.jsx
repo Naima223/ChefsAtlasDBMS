@@ -42,6 +42,13 @@ function RecipeShelf({ title, description, recipes = [], variant = "default" }) 
                     {index + 1}
                   </span>
                   <div className="recipe-shelf__poster">
+                    {recipe.image_url && (
+                      <img
+                        src={recipe.image_url}
+                        alt={recipe.title}
+                        className="recipe-shelf__image"
+                      />
+                    )}
                     <div className="recipe-shelf__media recipe-shelf__media--top10">
                       <div className="recipe-shelf__topline">
                         <span className="recipe-shelf__badge">
@@ -73,6 +80,13 @@ function RecipeShelf({ title, description, recipes = [], variant = "default" }) 
               ) : (
                 <>
                   <div className="recipe-shelf__media">
+                    {recipe.image_url && (
+                      <img
+                        src={recipe.image_url}
+                        alt={recipe.title}
+                        className="recipe-shelf__thumb"
+                      />
+                    )}
                     <span className="recipe-shelf__badge">
                       {recipe.categories?.[0]?.name || "Chef's Pick"}
                     </span>

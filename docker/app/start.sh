@@ -67,6 +67,9 @@ fi
 php artisan config:clear || true
 php artisan cache:clear || true
 
+echo "Creating storage symlink..."
+php artisan storage:link --force || true
+
 echo "Running migrations..."
 php artisan migrate --force
 

@@ -1,49 +1,61 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../api/api";
+import { useToast } from "../components/useToast";
 import "./CreateRecipe.css";
 
 export default function CreateRecipe() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const [form, setForm] = useState({
     title: "",
     description: "",
     ingredients: "",
     instructions: "",
-    categories: ""
+    categories: "",
+    image: null
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleChange = (e) => {
+    const { name, value, type, files } = e.target;
     setForm({
       ...form,
-      [e.target.name]: e.target.value
+      [name]: type === "file" ? files[0] : value
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted");
+    setIsSubmitting(true);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/recipes", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          ...form,
-          ingredients: form.ingredients.split(","),
-          categories: form.categories.split(",")
-        })
+      await api.saveRecipe({
+        title: form.title,
+        description: form.description,
+        ingredients: form.ingredients
+          .split(",")
+          .map((i) => i.trim())
+          .filter((i) => i),
+        instructions: form.instructions
+          .split(",")
+          .map((i) => i.trim())
+          .filter((i) => i),
+        categories: form.categories
+          .split(",")
+          .map((c) => c.trim())
+          .filter((c) => c),
+        image: form.image
       });
 
-      if (res.ok) {
-        navigate("/recipes");
-      } else {
-        console.error("Failed to upload recipe");
-      }
+      showToast("Recipe uploaded successfully!", "success");
+      navigate("/recipes");
     } catch (err) {
-      console.error(err);
+      showToast(err.rawMessage || "Failed to upload recipe", "error");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -86,7 +98,16 @@ export default function CreateRecipe() {
           onChange={handleChange}
         />
 
-        <button type="submit">Upload Recipe</button>
+        <input
+          type="file"
+          name="image"
+          accept="image/*"
+          onChange={handleChange}
+        />
+
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Uploading..." : "Upload Recipe"}
+        </button>
       </form>
     </div>
   );
