@@ -2,7 +2,11 @@
 
 namespace App\Exceptions;
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -30,18 +34,39 @@ class Handler extends ExceptionHandler
 
     public function render($request, Throwable $exception)
     {
-        if ($exception instanceof BadRequestException) {
-            return response()->json([
-                'message' => $exception->getMessage(),
-            ], 400);
+        if (!$request->expectsJson()) {
+            return parent::render($request, $exception);
         }
 
-        // Default response for unexpected exceptions
+        if ($exception instanceof ValidationException) {
+            return response()->json([
+                'message' => 'The submitted data is invalid.',
+                'errors' => $exception->errors(),
+            ], $exception->status);
+        }
+
+        if ($exception instanceof AuthenticationException) {
+            return response()->json([
+                'message' => 'Authentication is required for this action.',
+            ], 401);
+        }
+
+        if ($exception instanceof ThrottleRequestsException) {
+            return response()->json([
+                'message' => 'Too many requests. Please try again later.',
+            ], 429);
+        }
+
+        if ($exception instanceof HttpExceptionInterface) {
+            return response()->json([
+                'message' => $exception->getMessage() ?: 'The request could not be completed.',
+            ], $exception->getStatusCode());
+        }
+
         return response()->json([
-            'error' => true,
-            'message' => $exception->getMessage(),
+            'message' => app()->hasDebugModeEnabled()
+                ? $exception->getMessage()
+                : 'Server error. Please try again later.',
         ], 500);
-
     }
-
 }

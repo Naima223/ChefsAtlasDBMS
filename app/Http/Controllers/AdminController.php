@@ -8,6 +8,7 @@ use App\Models\Review;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 
 class AdminController extends Controller
 {
@@ -83,6 +84,13 @@ class AdminController extends Controller
         $owner = $recipe->user;
         $deduction = min($owner->points, self::UPLOAD_REWARD);
         $owner->decrement('points', $deduction);
+
+        if ($recipe->image_path) {
+            Storage::disk('public')->delete($recipe->image_path);
+        }
+
+        $recipe->reviews()->delete();
+        $recipe->categories()->detach();
         $recipe->favoritedByUsers()->detach();
         $recipe->delete();
 
@@ -102,6 +110,11 @@ class AdminController extends Controller
         $user->reviews()->delete();
         $user->favorites()->detach();
         $user->recipes->each(function (Recipe $recipe) {
+            if ($recipe->image_path) {
+                Storage::disk('public')->delete($recipe->image_path);
+            }
+            $recipe->reviews()->delete();
+            $recipe->categories()->detach();
             $recipe->favoritedByUsers()->detach();
         });
         $user->delete();
