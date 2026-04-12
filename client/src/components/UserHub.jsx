@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/api";
 import { useToast } from "./useToast";
@@ -74,7 +74,7 @@ export default function UserHub() {
             const tipsData = await api.getUserTips(userId);
             setTips(Array.isArray(tipsData?.data) ? tipsData.data : []);
             setTipStats(tipsData?.stats || null);
-          } catch (tipsError) {
+          } catch {
             setTips([]);
             setTipStats(null);
             showToast("Your dashboard loaded, but tip activity could not be fetched right now.", "error");

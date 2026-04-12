@@ -10,6 +10,14 @@ function getLabel(count, singular, plural) {
   return `${count} ${count === 1 ? singular : plural}`;
 }
 
+function RecipeImage({ recipe, className, alt }) {
+  if (!recipe?.image_url) {
+    return null;
+  }
+
+  return <img alt={alt || recipe.title} className={className} src={recipe.image_url} />;
+}
+
 function RecipeShelf({ title, description, recipes = [], variant = "default" }) {
   const isTopRail = variant === "top10";
 
@@ -42,13 +50,11 @@ function RecipeShelf({ title, description, recipes = [], variant = "default" }) 
                     {index + 1}
                   </span>
                   <div className="recipe-shelf__poster">
-                    {recipe.image_url && (
-                      <img
-                        src={recipe.image_url}
-                        alt={recipe.title}
-                        className="recipe-shelf__image"
-                      />
-                    )}
+                    <RecipeImage
+                      recipe={recipe}
+                      className="recipe-shelf__poster-image"
+                      alt={recipe.title}
+                    />
                     <div className="recipe-shelf__media recipe-shelf__media--top10">
                       <div className="recipe-shelf__topline">
                         <span className="recipe-shelf__badge">
@@ -80,13 +86,11 @@ function RecipeShelf({ title, description, recipes = [], variant = "default" }) 
               ) : (
                 <>
                   <div className="recipe-shelf__media">
-                    {recipe.image_url && (
-                      <img
-                        src={recipe.image_url}
-                        alt={recipe.title}
-                        className="recipe-shelf__thumb"
-                      />
-                    )}
+                    <RecipeImage
+                      recipe={recipe}
+                      className="recipe-shelf__media-image"
+                      alt={recipe.title}
+                    />
                     <span className="recipe-shelf__badge">
                       {recipe.categories?.[0]?.name || "Chef's Pick"}
                     </span>
@@ -232,6 +236,11 @@ export default function SiteHome({ user, onOpenAuth }) {
           <p className="eyebrow">Featured Recipe</p>
           {featuredRecipe ? (
             <>
+              <RecipeImage
+                recipe={featuredRecipe}
+                className="home-feature__image"
+                alt={featuredRecipe.title}
+              />
               <h2>{featuredRecipe.title}</h2>
               <p className="section-copy">{featuredRecipe.description}</p>
 
