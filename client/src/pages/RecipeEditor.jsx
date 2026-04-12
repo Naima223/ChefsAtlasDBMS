@@ -133,10 +133,11 @@ export default function RecipeEditor({ user }) {
         },
         recipeId
       );
-      showToast(isEditing ? "Recipe updated successfully." : "Uploaded recipe successfully.");
+      showToast(isEditing ? "Recipe updated successfully." : "Recipe uploaded successfully.");
       navigate(isEditing ? "/profile" : "/recipes");
     } catch (submitError) {
       setError(submitError.message);
+      showToast(submitError.message, "error");
     } finally {
       setSaving(false);
     }

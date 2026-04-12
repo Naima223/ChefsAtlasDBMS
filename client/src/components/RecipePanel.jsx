@@ -35,6 +35,7 @@ function ReviewForm({ recipe, onSaved }) {
       onSaved?.();
     } catch (submitError) {
       setError(submitError.message);
+      showToast(submitError.message, "error");
     } finally {
       setSaving(false);
     }
@@ -133,10 +134,10 @@ export default function RecipePanel({
     try {
       if (isFavorited) {
         await api.unfavoriteRecipe(recipe.id);
-        showToast("Removed recipe from favorites.");
+        showToast("Removed from favorites.");
       } else {
         await api.favoriteRecipe(recipe.id);
-        showToast("Added recipe to favorites.");
+        showToast("Added to favorites.");
       }
       onChanged?.();
     } catch (error) {
