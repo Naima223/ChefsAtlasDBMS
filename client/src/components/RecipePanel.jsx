@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/api";
 import ConfirmModal from "./ConfirmModal";
-import StarRating from "./StarRating";
+import StarRating from "./StarRatingDisplay";
 import TipModal from "./TipModal";
 import { useToast } from "./useToast";
 
@@ -44,20 +44,21 @@ function ReviewForm({ recipe, onSaved }) {
   return (
     <form className="stack-form stack-form--tight review-form" onSubmit={handleSubmit}>
       <div className="review-form__top">
-        <div>
+        <div className="review-form__rating">
           <p className="field-label">Your Rating</p>
           <StarRating interactive label="Choose a rating" onChange={setRating} value={rating} />
         </div>
-        <button className="button button--secondary" disabled={saving} type="submit">
-          {saving ? "Saving..." : "Submit Review"}
-        </button>
+        <textarea
+          className="review-form__comment"
+          placeholder="Add a review comment"
+          rows="3"
+          value={comment}
+          onChange={(event) => setComment(event.target.value)}
+        />
       </div>
-      <textarea
-        placeholder="Add a review comment"
-        rows="3"
-        value={comment}
-        onChange={(event) => setComment(event.target.value)}
-      />
+      <button className="button button--secondary review-form__submit" disabled={saving} type="submit">
+        {saving ? "Saving..." : "Submit Review"}
+      </button>
       {error && <p className="form-error">{error}</p>}
     </form>
   );
