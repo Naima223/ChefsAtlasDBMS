@@ -19,7 +19,7 @@ export default function TipModal({ user, onClose, onSuccess }) {
         message: message || null,
       });
 
-      showToast(`Tip sent to ${user.name}! 🎉`, "success");
+      showToast("Coffee sent successfully.", "success");
       setAmount(5);
       setMessage("");
       onSuccess?.();

@@ -60,7 +60,7 @@ function AppContent() {
         setToken(response.token);
         setUser(response.user);
         setAuthMode(null);
-        showToast("Log-in successful.");
+        showToast("You've logged in successfully.");
       },
       async register(payload) {
         const response = await api.register(payload);
@@ -74,7 +74,7 @@ function AppContent() {
         setToken(response.token);
         setUser(response.user);
         setAuthMode(null);
-        showToast("Log-in successful.");
+        showToast("You've logged in successfully.");
       },
       async logout() {
         try {
