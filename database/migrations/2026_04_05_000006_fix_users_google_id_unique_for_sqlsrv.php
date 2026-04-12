@@ -12,6 +12,11 @@ return new class extends Migration
             return;
         }
 
+        // Check if the google_id column exists before proceeding
+        if (!Schema::hasColumn('users', 'google_id')) {
+            return;
+        }
+
         DB::statement("
             IF EXISTS (
                 SELECT 1

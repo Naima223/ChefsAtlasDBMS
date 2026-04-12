@@ -1,6 +1,7 @@
 FROM php:8.2-apache-bookworm
 
 ENV ACCEPT_EULA=Y
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -9,6 +10,7 @@ RUN apt-get update \
         curl \
         git \
         gpg \
+        libpq-dev \
         libzip-dev \
         unixodbc-dev \
         unzip \
@@ -21,7 +23,7 @@ RUN apt-get update \
     && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 \
     && printf "\n" | pecl install sqlsrv-5.12.0 pdo_sqlsrv-5.12.0 \
     && docker-php-ext-enable sqlsrv pdo_sqlsrv \
-    && docker-php-ext-install zip \
+    && docker-php-ext-install pdo_pgsql pgsql zip \
     && a2enmod rewrite \
     && echo "ServerName localhost" > /etc/apache2/conf-available/servername.conf \
     && a2enconf servername \
@@ -31,10 +33,13 @@ RUN apt-get update \
 
 WORKDIR /var/www/html
 
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+
 COPY . .
 COPY docker/app/start.sh /usr/local/bin/start-app
 
 RUN chmod +x /usr/local/bin/start-app \
+    && composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction \
     && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 EXPOSE 80

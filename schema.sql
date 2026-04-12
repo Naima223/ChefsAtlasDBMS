@@ -1,5 +1,5 @@
 -- Create database
-CREATE DATABASE cse3100_testA1;
+CREATE DATABASE cse3104_test;
 GO
 
 USE cse3104_test;
